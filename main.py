@@ -15,7 +15,7 @@ print("\n")
 found = False
 for i in range(env.n):
     for j in range(env.n):
-        if env.covered_grid[i][j] == 0:
+        if env.grid[i][j] == 0:
             agent.observe(i, j, 0)
             found = True
             break

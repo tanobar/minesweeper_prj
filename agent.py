@@ -62,6 +62,34 @@ class Agent:
             return ("reveal", *random.choice(unknown))
         else:
             return None
+
+
+    def can_reveal(self, x, y): # non so se serve per dopo
+        """
+        Verifica se una cella può essere rivelata (non è già stata rivelata).
+        
+        Args:
+            x, y: Coordinate della cella
+            
+        Returns:
+            bool: True se la cella può essere rivelata
+        """
+        return (x, y) not in self.moves_made and self.knowledge[x][y] == "?"
+
+
+    def can_flag(self, x, y): # non so se serve per dopo
+        """
+        Verifica se una cella può essere flaggata (non è già stata rivelata o flaggata).
+        
+        Args:
+            x, y: Coordinate della cella
+            
+        Returns:
+            bool: True se la cella può essere flaggata
+        """
+        return (self.knowledge[x][y] == "?" and 
+                (x, y) not in self.moves_made and 
+                (x, y) not in self.mine_cells)
     
 
     def print_grid(self):
