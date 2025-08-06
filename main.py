@@ -1,12 +1,12 @@
 from minesweeper_env import MinesweeperEnv
-from agent import Agent
+from agent import *
 import time
 
 
-n, m = 5, 5  # Dimensione della griglia (n x n) e numero di mine m
+n, m = 5, 1  # Dimensione della griglia (n x n) e numero di mine m
 
 env = MinesweeperEnv(n, m)
-agent = Agent(n)
+agent = RandomAgent(n)
 
 env.print_grid()  # Stampa la griglia iniziale, per ora solo come riferimento e debugging
 print("\n")
@@ -49,8 +49,15 @@ while True:
         agent.mark_mine(x, y)
 
     agent.print_grid()
+    
+    # Controlla se l'agente ha vinto
+    if agent.check_victory_status(env):
+        print("CONGRATULAZIONI! HAI VINTO!")
+        break
+    
     print("\n")
     #aspetta 2 secondi prima di continuare, così visualizzo lo stato corrente
-    time.sleep(2)
+    time.sleep(1)
 
 
+    

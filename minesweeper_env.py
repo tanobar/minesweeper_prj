@@ -78,6 +78,53 @@ class MinesweeperEnv:
         return revealed_value
     
 
+    def flag(self, x, y):
+        """
+        Contrassegna una cella come flaggata (contenente una mina).
+        Questo metodo per ora non fa nulla, ma può essere esteso in futuro.
+        
+        Args:
+            x (int): Coordinata riga (0-based)
+            y (int): Coordinata colonna (0-based)
+        """
+        # Verifica che le coordinate siano valide
+        if not (0 <= x < self.n and 0 <= y < self.n):
+            raise ValueError(f"Coordinate non valide: ({x}, {y}). La griglia è {self.n}x{self.n}")
+        
+        # Per ora questo metodo non fa nulla, la logica del flag è gestita dall'agente
+        pass
+    
+
+    def check_victory(self, agent_knowledge):
+        """
+        Verifica se l'agente ha raggiunto la condizione di vittoria.
+        La vittoria si ottiene quando tutte le celle non-mine sono state rivelate.
+        
+        Args:
+            agent_knowledge: La griglia di conoscenza dell'agente
+            
+        Returns:
+            bool: True se l'agente ha vinto, False altrimenti
+        """
+        # Conta quante celle non-mine ci sono nella griglia reale
+        total_non_mine_cells = 0
+        for i in range(self.n):
+            for j in range(self.n):
+                if self.grid[i][j] != "M":
+                    total_non_mine_cells += 1
+        
+        # Conta quante celle non-mine sono state rivelate dall'agente
+        revealed_non_mine_cells = 0
+        for i in range(self.n):
+            for j in range(self.n):
+                if (self.grid[i][j] != "M" and 
+                    agent_knowledge[i][j] != "?" and 
+                    agent_knowledge[i][j] != "X"):
+                    revealed_non_mine_cells += 1
+        
+        return revealed_non_mine_cells == total_non_mine_cells
+
+
     def print_grid(self): # per debugging
         """
         Stampa la griglia (ground truth) in modo leggibile.
