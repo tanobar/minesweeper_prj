@@ -3,30 +3,70 @@ from agent import *
 import time
 
 
-n, m = 5, 1  # Dimensione della griglia (n x n) e numero di mine m
+def safe_first_move(env, agent):
+    """
+    Garantisce una prima mossa sicura per qualsiasi agente.
+    Cerca in ordine: celle con 0, celle con 1, poi qualsiasi cella non-mina.
+    
+    Args:
+        env: L'environment di gioco
+        agent: L'agente a cui dare la prima mossa
+        
+    Returns:
+        tuple: (x, y, value) della cella rivelata
+    """
+    # Prima prova: cerca celle con valore 0
+    for i in range(env.n):
+        for j in range(env.n):
+            if env.grid[i][j] == 0:
+                print(f"Prima mossa sicura: cella ({i}, {j}) con valore 0")
+                value = env.reveal(i, j)
+                agent.observe(i, j, value)
+                return i, j, value
+    
+    # Seconda prova: cerca celle con valore 1
+    for i in range(env.n):
+        for j in range(env.n):
+            if env.grid[i][j] == 1:
+                print(f"Prima mossa sicura: cella ({i}, {j}) con valore 1")
+                value = env.reveal(i, j)
+                agent.observe(i, j, value)
+                return i, j, value
+    
+    # Ultima prova: cerca qualsiasi cella che non sia mina
+    for i in range(env.n):
+        for j in range(env.n):
+            if env.grid[i][j] != "M":
+                print(f"Prima mossa sicura: cella ({i}, {j}) con valore {env.grid[i][j]}")
+                value = env.reveal(i, j)
+                agent.observe(i, j, value)
+                return i, j, value
+    
+    # Questo non dovrebbe mai succedere in una griglia valida
+    raise Exception("Impossibile trovare una prima mossa sicura!")
+
+
+n, m = 5, 5  # Dimensione della griglia (n x n) e numero di mine m
 
 env = MinesweeperEnv(n, m)
-agent = RandomAgent(n)
+agent = BacktrackingCSPAgent(n)
 
-env.print_grid()  # Stampa la griglia iniziale, per ora solo come riferimento e debugging
-print("\n")
+print("Griglia reale:")
+env.print_grid()
+print()
 
-# primo passo: rivela una cella già scoperta nell'env (quella iniziale con 0)
-found = False
-for i in range(env.n):
-    for j in range(env.n):
-        if env.grid[i][j] == 0:
-            agent.observe(i, j, 0)
-            found = True
-            break
-    if found:
-        break
+# Convenzione minesweeper: la prima mossa è sempre sicura
+safe_first_move(env, agent)
 
+print("Stato agente dopo prima mossa:")
 agent.print_grid()
-print("\n")
+print()
 
 # ciclo di gioco
+move_count = 0
 while True:
+    move_count += 1
+    
     action = agent.choose_action()
     if action is None:
         print("Nessuna mossa da fare.")
@@ -36,9 +76,11 @@ while True:
     if move == "reveal":
         value = env.reveal(x, y)
         if value == "M":
+            print(f"BOOM! Cella ({x}, {y}) era una mina!")
             agent.observe(x, y, value)
+            print("\nStato finale:")
             agent.print_grid()
-            print("BOOM, GAME OVER.")
+            print("\nGAME OVER.")
             break
 
         if value is not None:
@@ -52,12 +94,10 @@ while True:
     
     # Controlla se l'agente ha vinto
     if agent.check_victory_status(env):
-        print("CONGRATULAZIONI! HAI VINTO!")
+        print(f"\nVINTO in {move_count} mosse!")
         break
     
-    print("\n")
-    #aspetta 2 secondi prima di continuare, così visualizzo lo stato corrente
+    print()
     time.sleep(1)
 
 
-    
