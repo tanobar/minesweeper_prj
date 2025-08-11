@@ -48,7 +48,7 @@ def safe_first_move(env, agent):
     raise Exception("Impossibile trovare una prima mossa sicura!")
 
 
-n, m = 10, 10  # Dimensione della griglia (n x n) e numero di mine m
+n, m = 5, 5  # Dimensione della griglia (n x n) e numero di mine m
 
 env = MinesweeperEnv(n, m)
 agent = BacktrackingCSPAgent(n)
