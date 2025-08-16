@@ -1,7 +1,6 @@
 from minesweeper_env import MinesweeperEnv
 from agent import *
 from backtrackingcspagent import BacktrackingCSPAgent
-from ac_agent import Acagent 
 import time
 
 
@@ -65,10 +64,7 @@ agent.print_grid()
 print()
 
 # ciclo di gioco
-move_count = 0
 while True:
-    move_count += 1
-    
     action = agent.choose_action()
     if action is None:
         print("Nessuna mossa da fare.")
@@ -96,7 +92,7 @@ while True:
     
     # Controlla se l'agente ha vinto
     if agent.check_victory_status(env):
-        print(f"\nVINTO in {move_count} mosse!")
+        print(f"\n HAI VINTO!")
         break
     
     print()
