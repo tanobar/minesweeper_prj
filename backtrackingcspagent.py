@@ -132,11 +132,13 @@ class BacktrackingCSPAgent(Agent):
     
     def select_unassigned_variable(self, unassigned, assignment):
         """
-        MRV: seleziona la variabile con meno valori nel dominio.
+        MRV + Degree Heuristic: seleziona la variabile con meno valori nel dominio.
+        In caso di parità, sceglie quella coinvolta in più vincoli con variabili non assegnate.
         """
         min_values = float('inf')
-        best_var = unassigned[0]
+        candidates = []  # Lista di variabili candidate con stesso MRV
         
+        # Prima fase: trova il minimo MRV
         for var in unassigned:
             legal_values = 0
             for value in [False, True]:
@@ -147,11 +149,45 @@ class BacktrackingCSPAgent(Agent):
             
             if legal_values < min_values:
                 min_values = legal_values
+                candidates = [var]  # Nuova lista con la variabile migliore
+            elif legal_values == min_values:
+                candidates.append(var)  # Aggiungi alla lista dei candidati
+        
+        # Seconda fase: se abbiamo più candidati, usa degree heuristic
+        if len(candidates) == 1:
+            return candidates[0]
+        
+        # Degree heuristic: scegli la variabile coinvolta in più vincoli
+        max_degree = -1
+        best_var = candidates[0]
+        
+        for var in candidates:
+            degree = self.calculate_degree(var, unassigned, assignment)
+            if degree > max_degree:
+                max_degree = degree
                 best_var = var
         
         return best_var
-  #SOLO LA PRIMA MRV VIENE CONSIDERATA
-  # VA FATTO DEGREE HEURISTIC  
+    
+    
+    def calculate_degree(self, var, unassigned, assignment):
+        """
+        Calcola il degree di una variabile: numero di vincoli che coinvolgono
+        questa variabile insieme ad altre variabili non ancora assegnate.
+        """
+        degree = 0
+        unassigned_set = set(unassigned) - {var}  # Escludi la variabile stessa
+        
+        for constraint in self.constraints:
+            # Controlla se questo vincolo coinvolge la variabile
+            if var in constraint["cells"]:
+                # Conta quante altre variabili non assegnate sono in questo vincolo
+                other_unassigned = constraint["cells"] & unassigned_set
+                if other_unassigned:  # Se ci sono altre variabili non assegnate
+                    degree += len(other_unassigned)
+        
+        return degree
+    
     
     def is_consistent_partial(self, assignment):
         """
@@ -237,3 +273,4 @@ class BacktrackingCSPAgent(Agent):
             return ("reveal", x, y)
         else:
             return None
+
