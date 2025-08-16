@@ -1,10 +1,14 @@
 from agent import Agent
 import random
+from prob.risk import pick_min_risk
+from prob.decision import pick_by_expected_utility
 
 class BacktrackingCSPAgent(Agent):
     def __init__(self, n):
         super().__init__(n)
         self.constraints = []  # Lista di vincoli: [{"cells": set(), "count": int}, ...]
+        self.use_meu = False  # default: usa min-risk
+
     
     
     def observe(self, x, y, value):
@@ -221,6 +225,8 @@ class BacktrackingCSPAgent(Agent):
             x, y = available_safe[0]
             return ("reveal", x, y)
         
+        from prob.risk import pick_min_risk
+
         # Se non ci sono celle sicure, scegli casualmente
         unknown = [
             (i, j)
@@ -232,8 +238,28 @@ class BacktrackingCSPAgent(Agent):
         ]
         
         if unknown:
+            """
             choice = random.choice(unknown)
             x, y = choice
+            """
+            if getattr(self, 'use_meu', False):
+                pick = pick_by_expected_utility(self.knowledge, self.moves_made, self.mine_cells,
+                                                u_safe=+1.0, u_mine=-10.0)
+            else:
+                pick = pick_min_risk(self.knowledge, self.moves_made, self.mine_cells)
+            if pick is not None:
+                x, y = pick
+                # DEBUG
+                try:
+                    from prob.risk import compute_cell_probs
+                    probs = compute_cell_probs(self.knowledge, self.mine_cells)
+                    print(f"[AGENT] scelgo {(x,y)} con P(mina)={probs.get((x,y), None)}")
+                except Exception:
+                    pass
+                return ("reveal", x, y)
+            else:
+                # extrema ratio: ancora random se proprio non c'è alternativa
+                x, y = random.choice(unknown)
             return ("reveal", x, y)
         else:
             return None

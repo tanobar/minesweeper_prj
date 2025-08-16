@@ -1,4 +1,6 @@
 import random
+from prob.risk import pick_min_risk
+
 
 class Agent:
     def __init__(self, n):
@@ -77,7 +79,7 @@ class RandomAgent(Agent):
             if (x, y) not in self.moves_made:
                 return ("reveal", x, y)
 
-        # Altrimenti esplora random
+        # Altrimenti esplora guidato dalla probabilità (fallback)
         unknown = [
             (i, j)
             for i in range(self.n)
@@ -88,6 +90,15 @@ class RandomAgent(Agent):
         ]
 
         if unknown:
-            return ("reveal", *random.choice(unknown))
+            # return ("reveal", *random.choice(unknown))
+            # MIN-RISK (consigliato come default)
+            pick = pick_min_risk(self.knowledge, self.moves_made, self.mine_cells)
+
+            if pick is not None:
+                x, y = pick
+            else:
+                # extrema ratio: proprio se non abbiamo info
+                x, y = random.choice(unknown)
+            return ("reveal", x, y)
         else:
             return None
