@@ -1,7 +1,5 @@
 from minesweeper_env import MinesweeperEnv
-from agent import *
-from backtrackingcspagent import BacktrackingCSPAgent
-from acagent import Acagent 
+from agent import Agent
 import time
 
 
@@ -48,12 +46,40 @@ def safe_first_move(env, agent):
     raise Exception("Impossibile trovare una prima mossa sicura!")
 
 
-n, m = 5, 5  # Dimensione della griglia (n x n) e numero di mine m
+def choose_agent_configuration():
+    """Permette all'utente di configurare l'agente."""
+    print("=== CONFIGURAZIONE AGENTE ===")
+    print("1. Random Agent")
+    print("2. Backtracking CSP (base)")
+    print("3. Backtracking CSP + MRV")
+    print("4. Backtracking CSP + MRV + Degree")
+    print("5. Backtracking CSP + MRV + LCV + Degree (completo)")
+    
+    while True:
+        choice = input("Scegli configurazione (1-5): ").strip()
+        if choice == "1":
+            return Agent(n, strategy="random")
+        elif choice == "2":
+            return Agent(n, strategy="backtracking")
+        elif choice == "3":
+            return Agent(n, strategy="backtracking", heuristics=["mrv"])
+        elif choice == "4":
+            return Agent(n, strategy="backtracking", heuristics=["mrv", "degree"])
+        elif choice == "5":
+            return Agent(n, strategy="backtracking", heuristics=["mrv", "lcv", "degree"])
+        else:
+            print("Scelta non valida. Inserisci un numero da 1 a 5.")
+
+
+n, m = 6, 5  # Dimensione della griglia (n x n) e numero di mine m
+
+# Configura l'agente
+agent = choose_agent_configuration()
 
 env = MinesweeperEnv(n, m)
-agent = BacktrackingCSPAgent(n)
 
-print("Griglia reale:")
+print(f"\nUsando: {agent.strategy} con euristiche: {agent.heuristics}")
+print("\nGriglia reale:")
 env.print_grid()
 print()
 
@@ -65,10 +91,7 @@ agent.print_grid()
 print()
 
 # ciclo di gioco
-move_count = 0
 while True:
-    move_count += 1
-    
     action = agent.choose_action()
     if action is None:
         print("Nessuna mossa da fare.")
@@ -96,7 +119,7 @@ while True:
     
     # Controlla se l'agente ha vinto
     if agent.check_victory_status(env):
-        print(f"\nVINTO in {move_count} mosse!")
+        print(f"\n HAI VINTO!")
         break
     
     print()
