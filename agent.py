@@ -1,6 +1,8 @@
 import random
 import support
 from prob.risk import pick_min_risk
+from collections import deque
+from itertools import product
 
 
 class Agent:
@@ -26,8 +28,9 @@ class Agent:
         
         # Attributi specifici per CSP/backtracking
         if strategy == "backtracking":
-            self.constraints = []  # Lista di vincoli: [{"cells": set(), "count": int}, ...]
+            self.constraints = []  # Lista di vincoli: [{"cell": tuple, " "neighbors": set(), "count": int}, ...]
 
+        self.Domains = {(x, y): {False, True} for x in range(n) for y in range(n)}    
 
     def observe(self, x, y, value):
         """
@@ -105,7 +108,8 @@ class Agent:
         
         if adjacent_unknown and 0 <= remaining_mines <= len(adjacent_unknown):
             self.constraints.append({
-                "cells": adjacent_unknown,
+                "cell": (x,y),
+                "neighbors": adjacent_unknown,
                 "count": remaining_mines
             })
 
@@ -145,10 +149,67 @@ class Agent:
             
         variables = set()
         for constraint in self.constraints:
-            for cell in constraint["cells"]:
+            for cell in constraint["neighbors"]:
                 if self.knowledge[cell[0]][cell[1]] == "?":
                     variables.add(cell)
         return list(variables)
+
+    def gac3(domains, constraints):
+        """
+        domains: dict[var] -> sottoinsieme di {False, True}
+        constraints: lista di cella, vicini non assegnati e vincolo 
+        Returns True se consistente, False se un qualunque dominio rimane vuoto.
+        """
+        # Build adjacency: for each var, which constraints mention it?
+        var2cons = {}
+        for C in constraints:
+            for v in C["neighbors"]:
+                var2cons.setdefault(v, []).append(C)
+
+        Q = deque()
+        for C in constraints:
+            for Xi in C["neighbors"]:
+                Q.append((Xi, C))
+
+        def revise(Xi, C):
+            removed = False
+            others = [v for v in C["neighbors"] if v != Xi]
+
+            for x in tuple(domains[Xi]):  # iterate over a snapshot; we may delete
+                need = C.total - x
+                # quick bound check
+                lo = sum(min(domains[v]) for v in others)
+                hi = sum(max(domains[v]) for v in others)
+                if need < lo or need > hi:
+                    domains[Xi].discard(x)
+                    removed = True
+                    continue
+                # exact support check (cheap in Minesweeper)
+                # try to find any tuple over others' domains that sums to 'need'
+                dom_lists = [tuple(domains[v]) for v in others]
+                supported = False
+                for choices in product(*dom_lists):
+                    if sum(choices) == need:
+                        supported = True
+                        break
+                if not supported:
+                    domains[Xi].discard(x)
+                    removed = True
+            return removed
+
+        while Q:
+            Xi, C = Q.popleft()
+            if revise(Xi, C):
+                if not domains[Xi]:
+                    return False  # wipeout
+                # Add back arcs (Xk, Ck) for constraints touching Xi (except C itself)
+                for Ck in var2cons.get(Xi, []):
+                    if Ck is C: 
+                        continue
+                    for Xk in Ck["neighbors"]:
+                        if Xk != Xi:
+                            Q.append((Xk, Ck))
+        return True
 
 
     def infer_safe_and_mines(self):

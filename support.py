@@ -21,7 +21,7 @@ def select_unassigned_variable(agent, unassigned, assignment):
     # Prima fase: trova il minimo MRV
     for var in unassigned:
         legal_values = 0
-        for value in [False, True]:
+        for value in agent.Domains[var]:
             test_assignment = assignment.copy()
             test_assignment[var] = value
             if is_consistent_partial(agent, test_assignment):
@@ -57,7 +57,7 @@ def calculate_degree(agent, var, unassigned, assignment):
         agent: istanza dell'agente
         var: variabile di cui calcolare il degree
         unassigned: lista di variabili non assegnate
-        assignment: dict con assegnazioni correnti
+        assignment: dict con assegnamenti correnti
         
     Returns:
         int: degree della variabile
@@ -66,8 +66,8 @@ def calculate_degree(agent, var, unassigned, assignment):
     unassigned_set = set(unassigned) - {var}
     
     for constraint in agent.constraints:
-        if var in constraint["cells"]:
-            other_unassigned = constraint["cells"] & unassigned_set
+        if var in constraint["neighbors"]:
+            other_unassigned = constraint["neighbors"] & unassigned_set
             if other_unassigned:
                 degree += len(other_unassigned)
     
@@ -90,7 +90,7 @@ def is_consistent_partial(agent, assignment):
         mines_assigned = 0
         unassigned_in_constraint = 0
         
-        for cell in constraint["cells"]:
+        for cell in constraint["neighbors"]:
             if cell in assignment:
                 assigned_in_constraint += 1
                 if assignment[cell]:
@@ -118,7 +118,7 @@ def is_consistent(agent, assignment):
     """
     for constraint in agent.constraints:
         mine_count = 0
-        for cell in constraint["cells"]:
+        for cell in constraint["neighbors"]:
             if cell in assignment and assignment[cell]:
                 mine_count += 1
         if mine_count != constraint["count"]:

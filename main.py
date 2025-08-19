@@ -122,6 +122,8 @@ while True:
         print(f"\n HAI VINTO!")
         break
     
+    #print(agent.constraints)
+    #print("\n")
     print()
     time.sleep(1)
 
