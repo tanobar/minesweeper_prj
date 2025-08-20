@@ -2,12 +2,7 @@
 import sys, argparse, random, collections
 sys.path.append(".")
 
-try:
-    from backtrackingcspagent import BacktrackingCSPAgent
-except Exception:
-    BacktrackingCSPAgent = None
-
-from agent import RandomAgent
+from agent import Agent  # <-- usa l'unica classe Agent
 
 def neighbors(n, i, j):
     for di in (-1,0,1):
@@ -54,8 +49,6 @@ class MiniEnv:
                 for r,c in neighbors(n,i,j):
                     if (r,c) not in self.revealed and (r,c) not in self.mines:
                         q.append((r,c))
-
-        # se è zero → flood fill, altrimenti solo la cella
         if self.counts[x][y]==0:
             q.append((x,y))
             while q:
@@ -66,7 +59,6 @@ class MiniEnv:
         return self.counts[x][y], out
 
     def check_victory(self, agent_knowledge):
-        """Vittoria se tutte le celle non-mine sono rivelate come interi nella knowledge dell'agente."""
         safe_total = self.n*self.n - self.num_mines
         safe_revealed = 0
         for i in range(self.n):
@@ -75,18 +67,13 @@ class MiniEnv:
                     safe_revealed += 1
         return safe_revealed == safe_total
 
-def make_agent(kind, n):
-    if kind == "random":
-        return RandomAgent(n)               # ora ha fallback probabilistico
-    if kind == "bt":
-        if BacktrackingCSPAgent is None:
-            raise ValueError("BacktrackingCSPAgent non disponibile nel progetto.")
-        ag = BacktrackingCSPAgent(n)
-        # opzionale: usare MEU
-        # ag.use_meu = True
-        return ag
-    raise ValueError("agent non riconosciuto: usa 'random' o 'bt'")
-
+def make_agent(agent_kind, n):
+    if agent_kind == "random":
+        return Agent(n, strategy="random")        # random puro (no PB)
+    elif agent_kind == "bt":
+        return Agent(n, strategy="backtracking")  # backtracking + PB S1
+    else:
+        raise ValueError(f"Unknown agent_kind: {agent_kind}")
 
 def play_one(agent_kind, n, mines, seed):
     env = MiniEnv(n, mines, seed)
@@ -106,8 +93,6 @@ def play_one(agent_kind, n, mines, seed):
 
     steps = 0
     while True:
-        steps += 1
-
         # 1) Chiedo all'agente la prossima azione
         if hasattr(agent, "choose_action"):
             action = agent.choose_action()
@@ -119,35 +104,27 @@ def play_one(agent_kind, n, mines, seed):
         if action is None:
             return {"result":"stuck", "steps":steps}
 
-        # 2) --- BLOCCO PATCHATO: normalizza e gestisci flag/mark ---
-        print("Action raw:", action)  # debug: puoi commentarlo se ti dà fastidio
-
-        # Normalizzazione formati comuni
+        # Normalizza e gestisci flag/mark
         a = None; x = y = None
         if isinstance(action, (list, tuple)):
             if len(action) == 2 and all(isinstance(v, int) for v in action):
-                # formato (x,y) → trattalo come reveal
                 a, (x, y) = "reveal", action
             elif len(action) >= 3:
                 a = str(action[0]).strip().lower()
                 x, y = action[1], action[2]
             else:
-                raise RuntimeError(f"Formato azione sconosciuto: {action!r}")
+                return {"result":"invalid_action", "steps":steps, "action":action}
         else:
-            raise RuntimeError(f"Formato azione non supportato: {action!r}")
-
-        # Sinonimi ammessi per 'reveal'
-        if a in ("reveal", "open", "click"):
-            pass  # ok, proseguiamo sotto con il reveal
-        elif a in ("flag", "mark", "mark_mine", "mine"):
-            # L'agente ha dedotto una mina certa: segna internamente e passa al prossimo turno
-            agent.mark_mine(x, y)
-            continue
-        else:
-            # Se vuoi essere ancora più permissivo, aggiungi qui altri alias
             return {"result":"invalid_action", "steps":steps, "action":action}
 
-        # 3) --- Esegui il reveal sull'env e aggiorna l'agente ---
+        if a in ("flag","mark","mark_mine","mine"):
+            agent.mark_mine(x, y)
+            continue
+        if a not in ("reveal","open","click"):
+            return {"result":"invalid_action", "steps":steps, "action":action}
+
+        # 3) Esegui reveal
+        steps += 1  # conta solo i reveal come step
         val, revealed = env.reveal(x, y)
         if val == 'M':
             return {"result":"mine", "steps":steps, "pos":(x,y)}
@@ -157,7 +134,6 @@ def play_one(agent_kind, n, mines, seed):
         # 4) Check vittoria
         if env.check_victory(agent.knowledge):
             return {"result":"win", "steps":steps}
-
 
 def bench(agent_kind, n, mines, games, seed):
     rng = random.Random(seed)

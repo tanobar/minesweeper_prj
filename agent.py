@@ -346,7 +346,7 @@ class Agent:
             x, y = available_safe[0]
             return ("reveal", x, y)
         
-        # Se non ci sono celle sicure, scegli casualmente
+        # Se non ci sono celle sicure, usa il fallback probabilistico (S1)
         unknown = [
             (i, j)
             for i in range(self.n)
@@ -355,14 +355,26 @@ class Agent:
                and (i, j) not in self.mine_cells
                and (i, j) not in self.moves_made
         ]
-        
+
         if unknown:
-            choice = random.choice(unknown)
-            x, y = choice
+            pick = pick_min_risk(
+                self.knowledge,
+                moves_made=self.moves_made,
+                mine_cells=self.mine_cells,
+                max_vars_exact=18,      # puoi regolarlo
+                max_solutions=200000    # idem
+            )
+            if pick is not None:
+                x, y = pick
+                return ("reveal", x, y)
+            
+            # extrema ratio: se per qualche motivo PB non dà nulla
+            x, y = random.choice(unknown)
             return ("reveal", x, y)
+        
         else:
             return None
-
+    
 
     def _choose_action_random(self):
         """
@@ -384,15 +396,7 @@ class Agent:
         ]
 
         if unknown:
-            # return ("reveal", *random.choice(unknown))
-            # MIN-RISK (consigliato come default)
-            pick = pick_min_risk(self.knowledge, self.moves_made, self.mine_cells)
-
-            if pick is not None:
-                x, y = pick
-            else:
-                # extrema ratio: proprio se non abbiamo info
-                x, y = random.choice(unknown)
+            x, y = random.choice(unknown)
             return ("reveal", x, y)
         else:
             return None
