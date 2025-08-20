@@ -1,5 +1,6 @@
 import random
 import support
+import copy
 from prob.risk import pick_min_risk
 from collections import deque
 from itertools import product
@@ -30,7 +31,8 @@ class Agent:
         if strategy == "backtracking":
             self.constraints = []  # Lista di vincoli: [{"cell": tuple, " "neighbors": set(), "count": int}, ...]
 
-        self.Domains = {(x, y): {False, True} for x in range(n) for y in range(n)}    
+        self.Domains = {(x, y): {0, 1} for x in range(n) for y in range(n)}    
+        self.pruned = 0
 
     def observe(self, x, y, value):
         """
@@ -154,38 +156,43 @@ class Agent:
                     variables.add(cell)
         return list(variables)
 
-    def gac3(domains, constraints):
+    def gac3(self):
         """
-        domains: dict[var] -> sottoinsieme di {False, True}
-        constraints: lista di cella, vicini non assegnati e vincolo 
-        Returns True se consistente, False se un qualunque dominio rimane vuoto.
+        Generalized-arc-consistency-3, utile per pruning di domini
+
+        Sfrutta i campi Domains e constraints dell'agente
+
+        domains: dict[var] -> sottoinsieme di {0,1}
+        constraints: lista di dizionari composti da cella, vicini non assegnati e vincolo 
+        Ritorna True se consistente, False se un qualunque dominio rimane vuoto.
         """
+        pruned_count = [0]  # counter per controllare se gac3 aiuta sui domini, solo per debug
+        domains = copy.deepcopy(self.Domains)
+        constraints = copy.deepcopy(self.constraints)
         # Build adjacency: for each var, which constraints mention it?
         var2cons = {}
+        Q = deque()
         for C in constraints:
             for v in C["neighbors"]:
                 var2cons.setdefault(v, []).append(C)
+                Q.append((v, C))
 
-        Q = deque()
-        for C in constraints:
-            for Xi in C["neighbors"]:
-                Q.append((Xi, C))
-
+       
         def revise(Xi, C):
             removed = False
-            others = [v for v in C["neighbors"] if v != Xi]
+            others = C["neighbors"] - {Xi}
 
-            for x in tuple(domains[Xi]):  # iterate over a snapshot; we may delete
-                need = C.total - x
+            for x in tuple(domains[Xi]):  #iteriamo su una copia immutabile, poiché il set cambierà
+                need = C["count"] - x
                 # quick bound check
                 lo = sum(min(domains[v]) for v in others)
                 hi = sum(max(domains[v]) for v in others)
                 if need < lo or need > hi:
                     domains[Xi].discard(x)
                     removed = True
+                    pruned_count[0] += 1
                     continue
-                # exact support check (cheap in Minesweeper)
-                # try to find any tuple over others' domains that sums to 'need'
+                # si cerca una qualunque tupla sui domini degli "others" la cui somma è "need"
                 dom_lists = [tuple(domains[v]) for v in others]
                 supported = False
                 for choices in product(*dom_lists):
@@ -195,20 +202,23 @@ class Agent:
                 if not supported:
                     domains[Xi].discard(x)
                     removed = True
+                    pruned_count[0] += 1
             return removed
 
         while Q:
             Xi, C = Q.popleft()
             if revise(Xi, C):
-                if not domains[Xi]:
-                    return False  # wipeout
-                # Add back arcs (Xk, Ck) for constraints touching Xi (except C itself)
+                if not domains[Xi]: #se il dominio di X_i è ora vuoto
+                    return False    #gac3 fallisce
+                # riaggiungi (Xk, Ck) per vincoli che interessano Xi (tranne C stesso)
                 for Ck in var2cons.get(Xi, []):
                     if Ck is C: 
                         continue
                     for Xk in Ck["neighbors"]:
                         if Xk != Xi:
                             Q.append((Xk, Ck))
+        self.Domains = domains
+        #print(f"{pruned_count[0]} pruned domains by gac3")
         return True
 
 
@@ -230,21 +240,30 @@ class Agent:
         if not variables or len(variables) > 15:  # Limite per performance
             return
         
+        self.gac3()
         # Per ogni variabile, testa se è sempre mina o sempre sicura
         for var in variables:
-            if var in self.safe_cells or var in self.mine_cells:
-                continue
+            #se gac3 è riuscito nel pruning
+            if len(self.Domains[var])==1:
+                if next(iter(self.Domains[var])):
+                    self.mine_cells.add(var)
+                else:
+                    self.safe_cells.add(var)
+                self.pruned += 1
+            else:
+                if var in self.safe_cells or var in self.mine_cells:
+                    continue
+                    
+                # Testa se la variabile può essere sicura
+                can_be_safe = self.backtrack({var: False}, [v for v in variables if v != var])
+                # Testa se la variabile può essere mine
+                can_be_mine = self.backtrack({var: True}, [v for v in variables if v != var])
                 
-            # Testa se la variabile può essere sicura
-            can_be_safe = self.backtrack({var: False}, [v for v in variables if v != var])
-            # Testa se la variabile può essere mine
-            can_be_mine = self.backtrack({var: True}, [v for v in variables if v != var])
-            
-            if can_be_safe and not can_be_mine:
-                self.safe_cells.add(var)
-            elif can_be_mine and not can_be_safe:
-                self.mine_cells.add(var)
-                self.knowledge[var[0]][var[1]] = "X"
+                if can_be_safe and not can_be_mine:
+                    self.safe_cells.add(var)
+                elif can_be_mine and not can_be_safe:
+                    self.mine_cells.add(var)
+                    self.knowledge[var[0]][var[1]] = "X"
 
 
     def backtrack(self, assignment, unassigned):

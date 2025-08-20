@@ -90,7 +90,9 @@ print("Stato agente dopo prima mossa:")
 agent.print_grid()
 print()
 
+move_count = 0
 # ciclo di gioco
+start = time.time()
 while True:
     action = agent.choose_action()
     if action is None:
@@ -115,16 +117,18 @@ while True:
         env.flag(x, y)
         agent.mark_mine(x, y)
 
-    agent.print_grid()
+    #agent.print_grid()
     
     # Controlla se l'agente ha vinto
     if agent.check_victory_status(env):
-        print(f"\n HAI VINTO!")
+        print(f"\n HAI VINTO IN {move_count} MOSSE!")
         break
     
-    #print(agent.constraints)
-    #print("\n")
-    print()
-    time.sleep(1)
+    move_count += 1
 
+    print()
+    #time.sleep(1)
+end = time.time()
+
+print("\n Tempo trascorso:", end - start, "secondi")
 
