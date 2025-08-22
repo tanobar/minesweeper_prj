@@ -1,6 +1,9 @@
 from minesweeper_env import MinesweeperEnv
 from agent import Agent
 import time
+from gui import MinesweeperGUI
+import tkinter as tk
+from sound import play_melody
 
 
 def safe_first_move(env, agent):
@@ -90,10 +93,24 @@ print("Stato agente dopo prima mossa:")
 agent.print_grid()
 print()
 
+#suoni
+MINE_SOUND = [(523, 0.2), (440, 0.2), (330, 0.4)]
+WIN_SOUND  = [(659, 0.2), (784, 0.2), (880, 0.4)]
+
 move_count = 0
 # ciclo di gioco
+root = tk.Tk()
+root.title('Minesweeper')
+# Bring window to front
+root.lift()
+root.attributes("-topmost", True)
+root.after(0, lambda: root.attributes("-topmost", False))
+gui = MinesweeperGUI(root, n)
 start = time.time()
 while True:
+
+    root.update()   
+
     action = agent.choose_action()
     if action is None:
         print("Nessuna mossa da fare.")
@@ -106,7 +123,9 @@ while True:
             print(f"BOOM! Cella ({x}, {y}) era una mina!")
             agent.observe(x, y, value)
             print("\nStato finale:")
-            agent.print_grid()
+            #agent.print_grid()
+            gui.draw_grid(agent.knowledge,'n')
+            play_melody(MINE_SOUND)
             print("\nGAME OVER.")
             break
 
@@ -118,17 +137,20 @@ while True:
         agent.mark_mine(x, y)
 
     #agent.print_grid()
-    
+    gui.draw_grid(agent.knowledge,'')
+
     # Controlla se l'agente ha vinto
     if agent.check_victory_status(env):
+        agent.print_grid()
+        gui.draw_grid(agent.knowledge,'y')
+        play_melody(WIN_SOUND)
         print(f"\n HAI VINTO IN {move_count} MOSSE!")
         break
     
     move_count += 1
 
-    print()
-    #time.sleep(1)
+    #print()
+    time.sleep(0.2)
 end = time.time()
-
 print("\n Tempo trascorso:", end - start, "secondi")
-
+root.mainloop()

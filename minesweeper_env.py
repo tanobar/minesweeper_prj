@@ -21,7 +21,7 @@ def generate_grid(n, m):
     
     # Genera posizioni casuali per le mine
     positions = [(i, j) for i in range(n) for j in range(n)]
-    #random.seed(40) #per debugging, su 42 (con n=6, m=5) l'agente per ora fallisce
+    random.seed(40) #per debugging, su 42 (con n=6, m=5) l'agente per ora fallisce
     mine_positions = random.sample(positions, m)
     
     # Posiziona le mine
