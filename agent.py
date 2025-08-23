@@ -7,7 +7,7 @@ from itertools import product
 
 
 class Agent:
-    def __init__(self, n, strategy="backtracking", heuristics=None):
+    def __init__(self, n, strategy="backtracking", heuristics=None, total_mines=None):
         """
         Agente modulare per minesweeper.
         
@@ -22,6 +22,7 @@ class Agent:
         self.moves_made = set()
         self.safe_cells = set()
         self.mine_cells = set()
+        self.total_mines = total_mines
         
         # Configurazione strategia
         self.strategy = strategy
@@ -362,7 +363,8 @@ class Agent:
                 moves_made=self.moves_made,
                 mine_cells=self.mine_cells,
                 max_vars_exact=18,      # puoi regolarlo
-                max_solutions=200000    # idem
+                max_solutions=200000,    # idem
+                total_mines=self.total_mines
             )
             if pick is not None:
                 x, y = pick

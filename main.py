@@ -81,6 +81,8 @@ agent = choose_agent_configuration()
 
 env = MinesweeperEnv(n, m)
 
+agent.total_mines = m
+
 print(f"\nUsando: {agent.strategy} con euristiche: {agent.heuristics}")
 print("\nGriglia reale:")
 env.print_grid()

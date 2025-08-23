@@ -78,7 +78,7 @@ def make_agent(agent_kind, n):
 def play_one(agent_kind, n, mines, seed):
     env = MiniEnv(n, mines, seed)
     agent = make_agent(agent_kind, n)
-
+    agent.total_mines = mines
     # Prima mossa: trova una safe per avviare il gioco
     start = None
     for i in range(n):
