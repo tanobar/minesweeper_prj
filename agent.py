@@ -7,15 +7,14 @@ from itertools import product
 
 
 class Agent:
-    def __init__(self, n, strategy="backtracking", heuristics=None, total_mines=None):
+    def __init__(self, n, strategy="backtracking", total_mines=None):
         """
         Agente modulare per minesweeper.
         
         Args:
             n: dimensione della griglia (n x n)
-            strategy: strategia principale ("backtracking", "random")
-            heuristics: lista di euristiche ["mrv", "lcv", "degree"]
-            techniques: lista di tecniche ["arc_consistency", "forward_checking"]
+            strategy: strategia principale ("backtracking", "backtracking_advanced", "backtracking_gac3", "random")
+            total_mines: numero totale di mine nel gioco
         """
         self.n = n
         self.knowledge = [["?" for _ in range(n)] for _ in range(n)]
@@ -26,10 +25,9 @@ class Agent:
         
         # Configurazione strategia
         self.strategy = strategy
-        self.heuristics = heuristics or []
         
         # Attributi specifici per CSP/backtracking
-        if strategy == "backtracking":
+        if strategy in ["backtracking", "backtracking_advanced", "backtracking_gac3"]:
             self.constraints = []  # Lista di vincoli: [{"cell": tuple, " "neighbors": set(), "count": int}, ...]
 
         self.Domains = {(x, y): {0, 1} for x in range(n) for y in range(n)}    
@@ -48,7 +46,7 @@ class Agent:
         self.moves_made.add((x, y))
         
         # Logica specifica per strategia
-        if self.strategy == "backtracking":
+        if self.strategy in ["backtracking", "backtracking_advanced", "backtracking_gac3"]:
             self._observe_backtracking(x, y, value)
         elif self.strategy == "random":
             self._observe_random(x, y, value)
@@ -89,7 +87,7 @@ class Agent:
         """
         Crea un vincolo per una cella numerica (solo per strategia backtracking).
         """
-        if self.strategy != "backtracking":
+        if self.strategy not in ["backtracking", "backtracking_advanced", "backtracking_gac3"]:
             return
             
         adjacent_unknown = set()
@@ -137,7 +135,7 @@ class Agent:
         """
         Verifica se l'agente ha raggiunto la condizione di vittoria.
         """
-        return env.check_victory(self.knowledge)
+        return env.check_victory(self.knowledge, total_non_mine_cells = self.n*self.n - self.total_mines)
     
 
     def get_variables(self):
@@ -147,7 +145,7 @@ class Agent:
         Returns:
             list: lista di tuple (r, c) delle celle sconosciute
         """
-        if self.strategy != "backtracking":
+        if self.strategy not in ["backtracking", "backtracking_advanced", "backtracking_gac3"]:
             return []
             
         variables = set()
@@ -227,7 +225,7 @@ class Agent:
         """
         Usa backtracking per inferire celle sicure e mine.
         """
-        if self.strategy != "backtracking":
+        if self.strategy not in ["backtracking", "backtracking_advanced", "backtracking_gac3"]:
             return
             
         # Ricostruisci vincoli aggiornati
@@ -241,13 +239,17 @@ class Agent:
         if not variables or len(variables) > 15:  # Limite per performance
             return
         
-        self.gac3()
+        # Usa GAC3 solo per la strategia backtracking_gac3
+        if self.strategy == "backtracking_gac3":
+            self.gac3()
+        
         # Per ogni variabile, testa se è sempre mina o sempre sicura
         for var in variables:
-            #se gac3 è riuscito nel pruning
-            if len(self.Domains[var])==1:
+            # Se GAC3 è stato usato e è riuscito nel pruning
+            if self.strategy == "backtracking_gac3" and len(self.Domains[var]) == 1:
                 if next(iter(self.Domains[var])):
                     self.mine_cells.add(var)
+                    self.knowledge[var[0]][var[1]] = "X"  # Marca anche nella knowledge per visualizzazione
                 else:
                     self.safe_cells.add(var)
                 self.pruned += 1
@@ -281,16 +283,16 @@ class Agent:
         if not unassigned:
             return support.is_consistent(self, assignment)
         
-        # Selezione variabile (MRV + Degree se configurato)
-        if "mrv" in self.heuristics:
+        # Selezione variabile (MRV + Degree se strategia avanzata o gac3)
+        if self.strategy in ["backtracking_advanced", "backtracking_gac3"]:
             var = support.select_unassigned_variable(self, unassigned, assignment)
         else:
             var = unassigned[0]  # Prima variabile disponibile
         
         unassigned.remove(var)
         
-        # Ordinamento valori (LCV se configurato)
-        if "lcv" in self.heuristics:
+        # Ordinamento valori (LCV se strategia avanzata o gac3)
+        if self.strategy in ["backtracking_advanced", "backtracking_gac3"]:
             values = [False, True]  # Per ora ordine semplice
         else:
             values = [False, True]
@@ -310,7 +312,7 @@ class Agent:
         """
         Sceglie la prossima azione in base alla strategia configurata.
         """
-        if self.strategy == "backtracking":
+        if self.strategy in ["backtracking", "backtracking_advanced", "backtracking_gac3"]:
             return self._choose_action_backtracking()
         elif self.strategy == "random":
             return self._choose_action_random()
@@ -337,15 +339,15 @@ class Agent:
             self.moves_made.add((x, y))
             return ("flag", x, y)
         
-        # Seconda priorità: celle sicure
+        # Seconda priorità: celle sicure (rivela tutte quelle disponibili)
         available_safe = []
         for x, y in sorted(self.safe_cells):
             if (x, y) not in self.moves_made:
                 available_safe.append((x, y))
         
         if available_safe:
-            x, y = available_safe[0]
-            return ("reveal", x, y)
+            # Restituisce un'azione speciale per rivelare tutte le celle sicure
+            return ("reveal_all_safe", available_safe)
         
         # Se non ci sono celle sicure, usa il fallback probabilistico (S1)
         unknown = [
@@ -382,10 +384,14 @@ class Agent:
         """
         Sceglie la prossima azione da fare casualmente.
         """
-        # Priorità: celle sicure
+        # Priorità: celle sicure (rivela tutte quelle disponibili)
+        available_safe = []
         for x, y in sorted(self.safe_cells):
             if (x, y) not in self.moves_made:
-                return ("reveal", x, y)
+                available_safe.append((x, y))
+        
+        if available_safe:
+            return ("reveal_all_safe", available_safe)
 
         # Altrimenti esplora guidato dalla probabilità (fallback)
         unknown = [
