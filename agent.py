@@ -236,8 +236,10 @@ class Agent:
                     self.add_constraint(i, j, self.knowledge[i][j])
         
         variables = self.get_variables()
-        if not variables or len(variables) > 15:  # Limite per performance
+        if not variables:
             return
+        """if not variables or len(variables) > 15:  # Limite per performance
+            return"""
         
         # Usa GAC3 solo per le strategie backtracking_gac3 e backtracking_pb
         if self.strategy in ["backtracking_gac3", "backtracking_pb"]:
