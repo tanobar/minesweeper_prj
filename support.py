@@ -33,8 +33,8 @@ def select_unassigned_variable(agent, unassigned, assignment):
         elif legal_values == min_values:
             candidates.append(var)
     
-    # Seconda fase: degree heuristic se configurato e necessario
-    if len(candidates) == 1 or "degree" not in agent.heuristics:
+    # Seconda fase: degree heuristic se strategia avanzata o gac3 e necessario
+    if len(candidates) == 1 or agent.strategy not in ["backtracking_advanced", "backtracking_gac3"]:
         return candidates[0]
     
     max_degree = -1
@@ -63,13 +63,24 @@ def calculate_degree(agent, var, unassigned, assignment):
         int: degree della variabile
     """
     degree = 0
-    unassigned_set = set(unassigned) - {var}
+    unassigned_set = set(unassigned)
+    x, y = var
     
-    for constraint in agent.constraints:
-        if var in constraint["neighbors"]:
-            other_unassigned = constraint["neighbors"] & unassigned_set
-            if other_unassigned:
-                degree += len(other_unassigned)
+    # Ottimizzazione: controlla solo i constraints delle celle adiacenti a var
+    # Invece di iterare su tutti i constraints, guardiamo solo quelli che potrebbero contenere var
+    for dx in [-1, 0, 1]:
+        for dy in [-1, 0, 1]:
+            if dx == 0 and dy == 0:
+                continue
+                
+            nx, ny = x + dx, y + dy
+            if 0 <= nx < agent.n and 0 <= ny < agent.n:
+                # Trova constraint che ha come cella centrale (nx, ny)
+                for constraint in agent.constraints:
+                    if constraint["cell"] == (nx, ny) and var in constraint["neighbors"]:
+                        # Calcola direttamente l'intersezione escludendo var
+                        other_unassigned = (constraint["neighbors"] & unassigned_set) - {var}
+                        degree += len(other_unassigned)
     
     return degree
 
