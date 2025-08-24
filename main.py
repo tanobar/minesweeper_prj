@@ -56,9 +56,10 @@ def choose_agent_configuration():
     print("2. Backtracking CSP (base)")
     print("3. Backtracking CSP (con euristiche)")
     print("4. Backtracking CSP (con euristiche + GAC3)")
+    print("5. Backtracking CSP (con euristiche + GAC3 + PB)")
     
     while True:
-        choice = input("Scegli configurazione (1-4): ").strip()
+        choice = input("Scegli configurazione (1-5): ").strip()
         if choice == "1":
             return Agent(n, strategy="random")
         elif choice == "2":
@@ -67,8 +68,10 @@ def choose_agent_configuration():
             return Agent(n, strategy="backtracking_advanced")
         elif choice == "4":
             return Agent(n, strategy="backtracking_gac3")
+        elif choice == "5":
+            return Agent(n, strategy="backtracking_pb")
         else:
-            print("Scelta non valida. Inserisci un numero da 1 a 4.")
+            print("Scelta non valida. Inserisci un numero da 1 a 5.")
 
 
 n, m = 10, 15  # Dimensione della griglia (n x n) e numero di mine m

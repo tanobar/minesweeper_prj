@@ -13,7 +13,7 @@ class Agent:
         
         Args:
             n: dimensione della griglia (n x n)
-            strategy: strategia principale ("backtracking", "backtracking_advanced", "backtracking_gac3", "random")
+            strategy: strategia principale ("backtracking", "backtracking_advanced", "backtracking_gac3", "backtracking_pb", "random")
             total_mines: numero totale di mine nel gioco
         """
         self.n = n
@@ -27,7 +27,7 @@ class Agent:
         self.strategy = strategy
         
         # Attributi specifici per CSP/backtracking
-        if strategy in ["backtracking", "backtracking_advanced", "backtracking_gac3"]:
+        if strategy in ["backtracking", "backtracking_advanced", "backtracking_gac3", "backtracking_pb"]:
             self.constraints = []  # Lista di vincoli: [{"cell": tuple, " "neighbors": set(), "count": int}, ...]
 
         self.Domains = {(x, y): {0, 1} for x in range(n) for y in range(n)}    
@@ -46,7 +46,7 @@ class Agent:
         self.moves_made.add((x, y))
         
         # Logica specifica per strategia
-        if self.strategy in ["backtracking", "backtracking_advanced", "backtracking_gac3"]:
+        if self.strategy in ["backtracking", "backtracking_advanced", "backtracking_gac3", "backtracking_pb"]:
             self._observe_backtracking(x, y, value)
         elif self.strategy == "random":
             self._observe_random(x, y, value)
@@ -87,7 +87,7 @@ class Agent:
         """
         Crea un vincolo per una cella numerica (solo per strategia backtracking).
         """
-        if self.strategy not in ["backtracking", "backtracking_advanced", "backtracking_gac3"]:
+        if self.strategy not in ["backtracking", "backtracking_advanced", "backtracking_gac3", "backtracking_pb"]:
             return
             
         adjacent_unknown = set()
@@ -145,7 +145,7 @@ class Agent:
         Returns:
             list: lista di tuple (r, c) delle celle sconosciute
         """
-        if self.strategy not in ["backtracking", "backtracking_advanced", "backtracking_gac3"]:
+        if self.strategy not in ["backtracking", "backtracking_advanced", "backtracking_gac3", "backtracking_pb"]:
             return []
             
         variables = set()
@@ -225,7 +225,7 @@ class Agent:
         """
         Usa backtracking per inferire celle sicure e mine.
         """
-        if self.strategy not in ["backtracking", "backtracking_advanced", "backtracking_gac3"]:
+        if self.strategy not in ["backtracking", "backtracking_advanced", "backtracking_gac3", "backtracking_pb"]:
             return
             
         # Ricostruisci vincoli aggiornati
@@ -239,14 +239,14 @@ class Agent:
         if not variables or len(variables) > 15:  # Limite per performance
             return
         
-        # Usa GAC3 solo per la strategia backtracking_gac3
-        if self.strategy == "backtracking_gac3":
+        # Usa GAC3 solo per le strategie backtracking_gac3 e backtracking_pb
+        if self.strategy in ["backtracking_gac3", "backtracking_pb"]:
             self.gac3()
         
         # Per ogni variabile, testa se è sempre mina o sempre sicura
         for var in variables:
             # Se GAC3 è stato usato e è riuscito nel pruning
-            if self.strategy == "backtracking_gac3" and len(self.Domains[var]) == 1:
+            if self.strategy in ["backtracking_gac3", "backtracking_pb"] and len(self.Domains[var]) == 1:
                 if next(iter(self.Domains[var])):
                     self.mine_cells.add(var)
                     self.knowledge[var[0]][var[1]] = "X"  # Marca anche nella knowledge per visualizzazione
@@ -283,16 +283,16 @@ class Agent:
         if not unassigned:
             return support.is_consistent(self, assignment)
         
-        # Selezione variabile (MRV + Degree se strategia avanzata o gac3)
-        if self.strategy in ["backtracking_advanced", "backtracking_gac3"]:
+        # Selezione variabile (MRV + Degree se strategia avanzata, gac3 o pb)
+        if self.strategy in ["backtracking_advanced", "backtracking_gac3", "backtracking_pb"]:
             var = support.select_unassigned_variable(self, unassigned, assignment)
         else:
             var = unassigned[0]  # Prima variabile disponibile
         
         unassigned.remove(var)
         
-        # Ordinamento valori (LCV se strategia avanzata o gac3)
-        if self.strategy in ["backtracking_advanced", "backtracking_gac3"]:
+        # Ordinamento valori (LCV se strategia avanzata, gac3 o pb)
+        if self.strategy in ["backtracking_advanced", "backtracking_gac3", "backtracking_pb"]:
             values = [False, True]  # Per ora ordine semplice
         else:
             values = [False, True]
@@ -312,7 +312,7 @@ class Agent:
         """
         Sceglie la prossima azione in base alla strategia configurata.
         """
-        if self.strategy in ["backtracking", "backtracking_advanced", "backtracking_gac3"]:
+        if self.strategy in ["backtracking", "backtracking_advanced", "backtracking_gac3", "backtracking_pb"]:
             return self._choose_action_backtracking()
         elif self.strategy == "random":
             return self._choose_action_random()
@@ -349,7 +349,7 @@ class Agent:
             # Restituisce un'azione speciale per rivelare tutte le celle sicure
             return ("reveal_all_safe", available_safe)
         
-        # Se non ci sono celle sicure, usa il fallback probabilistico (S1)
+        # Se non ci sono celle sicure, fallback basato sulla strategia
         unknown = [
             (i, j)
             for i in range(self.n)
@@ -360,19 +360,21 @@ class Agent:
         ]
 
         if unknown:
-            pick = pick_min_risk(
-                self.knowledge,
-                moves_made=self.moves_made,
-                mine_cells=self.mine_cells,
-                max_vars_exact=18,      # puoi regolarlo
-                max_solutions=200000,    # idem
-                total_mines=self.total_mines
-            )
-            if pick is not None:
-                x, y = pick
-                return ("reveal", x, y)
+            # Solo la strategia backtracking_pb usa PB come fallback
+            if self.strategy == "backtracking_pb":
+                pick = pick_min_risk(
+                    self.knowledge,
+                    moves_made=self.moves_made,
+                    mine_cells=self.mine_cells,
+                    max_vars_exact=18,      # puoi regolarlo
+                    max_solutions=200000,    # idem
+                    total_mines=self.total_mines
+                )
+                if pick is not None:
+                    x, y = pick
+                    return ("reveal", x, y)
             
-            # extrema ratio: se per qualche motivo PB non dà nulla
+            # Fallback per tutte le altre strategie: scelta casuale
             x, y = random.choice(unknown)
             return ("reveal", x, y)
         
