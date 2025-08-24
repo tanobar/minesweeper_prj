@@ -3,7 +3,7 @@ from agent import Agent
 import time
 from gui import MinesweeperGUI
 import tkinter as tk
-from sound import play_melody
+#from sound import play_melody
 
 
 def safe_first_move(env, agent):
@@ -54,27 +54,24 @@ def choose_agent_configuration():
     print("=== CONFIGURAZIONE AGENTE ===")
     print("1. Random Agent")
     print("2. Backtracking CSP (base)")
-    print("3. Backtracking CSP + MRV")
-    print("4. Backtracking CSP + MRV + Degree")
-    print("5. Backtracking CSP + MRV + LCV + Degree (completo)")
+    print("3. Backtracking CSP (con euristiche)")
+    print("4. Backtracking CSP (con euristiche + GAC3)")
     
     while True:
-        choice = input("Scegli configurazione (1-5): ").strip()
+        choice = input("Scegli configurazione (1-4): ").strip()
         if choice == "1":
             return Agent(n, strategy="random")
         elif choice == "2":
             return Agent(n, strategy="backtracking")
         elif choice == "3":
-            return Agent(n, strategy="backtracking", heuristics=["mrv"])
+            return Agent(n, strategy="backtracking_advanced")
         elif choice == "4":
-            return Agent(n, strategy="backtracking", heuristics=["mrv", "degree"])
-        elif choice == "5":
-            return Agent(n, strategy="backtracking", heuristics=["mrv", "lcv", "degree"])
+            return Agent(n, strategy="backtracking_gac3")
         else:
-            print("Scelta non valida. Inserisci un numero da 1 a 5.")
+            print("Scelta non valida. Inserisci un numero da 1 a 4.")
 
 
-n, m = 6, 5  # Dimensione della griglia (n x n) e numero di mine m
+n, m = 10, 15  # Dimensione della griglia (n x n) e numero di mine m
 
 # Configura l'agente
 agent = choose_agent_configuration()
@@ -83,7 +80,7 @@ env = MinesweeperEnv(n, m)
 
 agent.total_mines = m
 
-print(f"\nUsando: {agent.strategy} con euristiche: {agent.heuristics}")
+print(f"\nUsando strategia: {agent.strategy}")
 print("\nGriglia reale:")
 env.print_grid()
 print()
@@ -95,9 +92,9 @@ print("Stato agente dopo prima mossa:")
 agent.print_grid()
 print()
 
-#suoni
+"""#suoni
 MINE_SOUND = [(523, 0.2), (440, 0.2), (330, 0.4)]
-WIN_SOUND  = [(659, 0.2), (784, 0.2), (880, 0.4)]
+WIN_SOUND  = [(659, 0.2), (784, 0.2), (880, 0.4)]"""
 
 move_count = 0
 # ciclo di gioco
@@ -118,8 +115,9 @@ while True:
         print("Nessuna mossa da fare.")
         break
 
-    move, x, y = action
+    move = action[0]
     if move == "reveal":
+        x, y = action[1], action[2]
         value = env.reveal(x, y)
         if value == "M":
             print(f"BOOM! Cella ({x}, {y}) era una mina!")
@@ -127,14 +125,35 @@ while True:
             print("\nStato finale:")
             #agent.print_grid()
             gui.draw_grid(agent.knowledge,'n')
-            play_melody(MINE_SOUND)
+            #play_melody(MINE_SOUND)
             print("\nGAME OVER.")
             break
 
         if value is not None:
             agent.observe(x, y, value)
 
+    elif move == "reveal_all_safe":
+        safe_cells = action[1]
+        game_over = False
+        for x, y in safe_cells:
+            value = env.reveal(x, y)
+            if value == "M":
+                print(f"ERRORE: Cella ({x}, {y}) doveva essere sicura ma era una mina!")
+                agent.observe(x, y, value)
+                print("\nStato finale:")
+                gui.draw_grid(agent.knowledge,'n')
+                print("\nGAME OVER.")
+                game_over = True
+                break
+            
+            if value is not None:
+                agent.observe(x, y, value)
+        
+        if game_over:
+            break
+
     elif move == "flag":
+        x, y = action[1], action[2]
         env.flag(x, y)
         agent.mark_mine(x, y)
 
@@ -145,14 +164,14 @@ while True:
     if agent.check_victory_status(env):
         agent.print_grid()
         gui.draw_grid(agent.knowledge,'y')
-        play_melody(WIN_SOUND)
+        #play_melody(WIN_SOUND)
         print(f"\n HAI VINTO IN {move_count} MOSSE!")
         break
     
     move_count += 1
 
     #print()
-    time.sleep(0.2)
+    time.sleep(0.3)
 end = time.time()
 print("\n Tempo trascorso:", end - start, "secondi")
 root.mainloop()
