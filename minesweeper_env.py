@@ -21,7 +21,7 @@ def generate_grid(n, m):
     
     # Genera posizioni casuali per le mine
     positions = [(i, j) for i in range(n) for j in range(n)]
-    random.seed(40) #per debugging, su 42 (con n=6, m=5) l'agente per ora fallisce
+    random.seed(41) #per debugging, su 42 (con n=6, m=5) l'agente per ora fallisce
     mine_positions = random.sample(positions, m)
     
     # Posiziona le mine
@@ -112,7 +112,7 @@ class MinesweeperEnv:
         pass
     
 
-    def check_victory(self, agent_knowledge):
+    def check_victory(self, agent_knowledge, total_non_mine_cells):
         """
         Verifica se l'agente ha raggiunto la condizione di vittoria.
         La vittoria si ottiene quando tutte le celle non-mine sono state rivelate.
@@ -123,12 +123,6 @@ class MinesweeperEnv:
         Returns:
             bool: True se l'agente ha vinto, False altrimenti
         """
-        # Conta quante celle non-mine ci sono nella griglia reale
-        total_non_mine_cells = 0
-        for i in range(self.n):
-            for j in range(self.n):
-                if self.grid[i][j] != "M":
-                    total_non_mine_cells += 1
         
         # Conta quante celle non-mine sono state rivelate dall'agente
         revealed_non_mine_cells = 0
