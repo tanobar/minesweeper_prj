@@ -23,6 +23,7 @@ class Agent:
         self.safe_cells = set()
         self.mine_cells = set()
         self.total_mines = total_mines
+        self.to_flag = total_mines
         
         # Configurazione strategia
         self.strategy = strategy
@@ -340,6 +341,7 @@ class Agent:
             x, y = unflagged_mines[0]
             # Marca come mossa fatta per evitare di flaggare di nuovo
             self.moves_made.add((x, y))
+            self.to_flag -= 1
             return ("flag", x, y)
         
         # Seconda priorità: celle sicure (rivela tutte quelle disponibili)

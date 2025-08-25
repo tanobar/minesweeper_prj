@@ -74,7 +74,7 @@ def choose_agent_configuration():
             print("Scelta non valida. Inserisci un numero da 1 a 5.")
 
 
-n_row, n_col, m = 6, 12, 10  # Dimensione della griglia (n x n) e numero di mine m
+n_row, n_col, m = 16, 30, 10  # Dimensione della griglia (n x n) e numero di mine m
 
 # Configura l'agente
 agent = choose_agent_configuration()
@@ -82,6 +82,7 @@ agent = choose_agent_configuration()
 env = MinesweeperEnv(n_row, n_col, m)
 
 agent.total_mines = m
+agent.to_flag = m
 
 print(f"\nUsando strategia: {agent.strategy}")
 print("\nGriglia reale:")
@@ -107,7 +108,7 @@ root.title('Minesweeper')
 root.lift()
 root.attributes("-topmost", True)
 root.after(0, lambda: root.attributes("-topmost", False))
-gui = MinesweeperGUI(root, n_row, n_col)
+gui = MinesweeperGUI(root, n_row, n_col, m)
 start = time.time()
 while True:
 
@@ -127,7 +128,7 @@ while True:
             agent.observe(x, y, value)
             print("\nStato finale:")
             #agent.print_grid()
-            gui.draw_grid(agent.knowledge,'n')
+            gui.draw_grid(agent.knowledge,  agent.to_flag, 'n')
             #play_melody(MINE_SOUND)
             print("\nGAME OVER.")
             break
@@ -144,7 +145,7 @@ while True:
                 print(f"ERRORE: Cella ({x}, {y}) doveva essere sicura ma era una mina!")
                 agent.observe(x, y, value)
                 print("\nStato finale:")
-                gui.draw_grid(agent.knowledge,'n')
+                gui.draw_grid(agent.knowledge, agent.to_flag, 'n')
                 print("\nGAME OVER.")
                 game_over = True
                 break
@@ -161,12 +162,12 @@ while True:
         agent.mark_mine(x, y)
 
     #agent.print_grid()
-    gui.draw_grid(agent.knowledge,'')
+    gui.draw_grid(agent.knowledge, agent.to_flag, '')
 
     # Controlla se l'agente ha vinto
     if agent.check_victory_status(env):
         agent.print_grid()
-        gui.draw_grid(agent.knowledge,'y')
+        gui.draw_grid(agent.knowledge, agent.to_flag, 'y')
         #play_melody(WIN_SOUND)
         print(f"\n HAI VINTO IN {move_count} MOSSE!")
         break
