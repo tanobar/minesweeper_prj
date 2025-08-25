@@ -22,7 +22,7 @@ def test_assessment():
             print(f"  Testing {strategy}...", end=" ")
             
             start_time = time.time()
-            result = runner.play_game(strategy, grid_size=6, mine_count=5, seed=42)
+            result = runner.play_game(strategy, grid_size_h=6, grid_size_w = 6, mine_count=5, seed=42)
             execution_time = time.time() - start_time
             
             print(f"Result: {result.result}, Steps: {result.steps}, Time: {execution_time:.3f}s")
@@ -31,7 +31,7 @@ def test_assessment():
         
         # Mini assessment senza salvataggio file e senza creare cartelle
         assessment = Assessment(output_dir=None)
-        grid_configs = [{"grid_size": 6, "mine_count": 5}]
+        grid_configs = [{"grid_size_h": 6, "grid_size_w": 6, "mine_count": 5}]
         
         start_time = time.time()
         metrics = assessment.run_assessment(strategies, grid_configs, games_per_config=3)

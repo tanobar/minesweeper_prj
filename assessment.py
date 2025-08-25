@@ -38,7 +38,8 @@ class GameResult:
     time_per_move: float
     safe_moves_correct: int
     safe_moves_total: int
-    grid_size: int
+    grid_size_h: int
+    grid_size_w: int
     mine_count: int
     seed: int
 
@@ -99,12 +100,12 @@ class GameRunner:
         """Verifica se una mossa è sicura."""
         return env.grid[x][y] != "M"
     
-    def play_game(self, strategy: str, grid_size: int, mine_count: int, seed: int) -> GameResult:
+    def play_game(self, strategy: str, grid_size_h: int, grid_size_w: int, mine_count: int, seed: int) -> GameResult:
         """Esegue una singola partita."""
         
         random.seed(seed)
-        env = MinesweeperEnv(grid_size, mine_count)
-        agent = Agent(grid_size, strategy=strategy, total_mines=mine_count)
+        env = MinesweeperEnv(grid_size_h, grid_size_w, mine_count)
+        agent = Agent(grid_size_h, grid_size_w, strategy=strategy, total_mines=mine_count)
         
         start_time = time.time()
         move_times = []
@@ -198,7 +199,8 @@ class GameRunner:
                 time_per_move=avg_move_time,
                 safe_moves_correct=safe_moves_correct,
                 safe_moves_total=safe_moves_total,
-                grid_size=grid_size,
+                grid_size_h=grid_size_h,
+                grid_size_w=grid_size_w,
                 mine_count=mine_count,
                 seed=seed
             )
@@ -217,7 +219,8 @@ class GameRunner:
                 time_per_move=avg_move_time,
                 safe_moves_correct=safe_moves_correct,
                 safe_moves_total=safe_moves_total,
-                grid_size=grid_size,
+                grid_size_h=grid_size_h,
+                grid_size_w=grid_size_w,
                 mine_count=mine_count,
                 seed=seed
             )
@@ -244,7 +247,7 @@ class Assessment:
         
         Args:
             strategies: Lista delle strategie da testare
-            grid_configs: Lista di dict con 'grid_size' e 'mine_count'
+            grid_configs: Lista di dict con 'grid_size_h', 'grid_size_w' e 'mine_count'
             games_per_config: Numero di partite per configurazione
         """
         total_configs = len(strategies) * len(grid_configs)
@@ -259,10 +262,11 @@ class Assessment:
         
         config_count = 0
         for grid_config in grid_configs:
-            grid_size = grid_config['grid_size']
+            grid_size_h = grid_config['grid_size_h']
+            grid_size_w = grid_config['grid_size_w']
             mine_count = grid_config['mine_count']
             
-            print(f"Griglia {grid_size}x{grid_size} con {mine_count} mine")
+            print(f"Griglia {grid_size_h}x{grid_size_w} con {mine_count} mine")
             
             for strategy_idx, strategy in enumerate(strategies):
                 config_count += 1
@@ -274,7 +278,7 @@ class Assessment:
                         print(f"    Game {game_num}/{games_per_config}")
                     
                     seed = random.randint(0, 10**9)
-                    result = self.runner.play_game(strategy, grid_size, mine_count, seed)
+                    result = self.runner.play_game(strategy, grid_size_h, grid_size_w, mine_count, seed)
                     strategy_results.append(result)
                     self.results.append(result)
                 
@@ -462,18 +466,18 @@ def get_grid_configs(mode="quick"):
     """Ritorna configurazioni griglia per il test."""
     if mode == "quick":
         return [
-            {"grid_size": 8, "mine_count": 10}
+            {"grid_size_h": 8, "grid_size_w": 8, "mine_count": 10}
         ]
     elif mode == "medium":
         return [
-            {"grid_size": 8, "mine_count": 10},
-            {"grid_size": 10, "mine_count": 15}
+            {"grid_size_h": 8, "grid_size_w": 8, "mine_count": 10},
+            {"grid_size_h": 10, "grid_size_w": 10, "mine_count": 15}
         ]
     else:  # full
         return [
-            {"grid_size": 8, "mine_count": 10},
-            {"grid_size": 10, "mine_count": 15},
-            {"grid_size": 12, "mine_count": 20}
+            {"grid_size_h": 8, "grid_size_w": 8, "mine_count": 10},
+            {"grid_size_h": 10, "grid_size_w": 10, "mine_count": 15},
+            {"grid_size_h": 12, "grid_size_w": 12, "mine_count": 20}
         ]
 
 
