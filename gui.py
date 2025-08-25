@@ -8,7 +8,7 @@ class MinesweeperGUI:
         self.cell_size = cell_size
         self.canvas = tk.Canvas(root, width=n_col*cell_size, height=n_row*cell_size)
         self.canvas.pack()
-
+        self.colors = ["blue", "green", "red", "purple", "lightblue", "darkgreen", "black", "black"]
         
         k = [["?" for _ in range(n_col)] for _ in range(n_row)]
         
@@ -21,7 +21,7 @@ class MinesweeperGUI:
                 x1, y1 = x * self.cell_size, y * self.cell_size
                 x2, y2 = x1 + self.cell_size, y1 + self.cell_size
 
-                value = knowledge[y][x]  # nota row=y, col=x
+                value = knowledge[y][x]  # note row=y, col=x
                 if isinstance(value,int):
                     fill = "gray"
                 elif value == "?":
@@ -35,14 +35,14 @@ class MinesweeperGUI:
                 # disegna il numero se è un int>0
                 if isinstance(value, int) and value >0:
                     self.canvas.create_text(
-                        (x1+x2)//2, (y1+y2)//2, text=str(value), fill="black"
+                        (x1+x2)//2, (y1+y2)//2, text=str(value), fill=self.colors[value-1]
                     )
         if game == 'n':
                     center_x = self.n_col * self.cell_size // 2
                     center_y = self.n_row * self.cell_size // 2
                     self.canvas.create_text(
                         center_x,
-                        center_y,   # shifted 20 pixels down
+                        center_y,
                         text="wtf bro :(",
                         fill="black",
                         font=("Helvetica", 30, "bold")

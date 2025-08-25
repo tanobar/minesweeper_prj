@@ -87,9 +87,10 @@ class GameRunner:
     def count_revealed_cells(self, knowledge):
         """Conta celle rivelate."""
         revealed = 0
-        n = len(knowledge)
-        for i in range(n):
-            for j in range(n):
+        n_row = len(knowledge)
+        n_col = len(knowledge[0])
+        for i in range(n_row):
+            for j in range(n_col):
                 if knowledge[i][j] != "?" and knowledge[i][j] != "X":
                     revealed += 1
         return revealed

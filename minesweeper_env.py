@@ -3,7 +3,7 @@ import random
 
 def generate_grid(n_row, n_col, m):
     """
-    Genera una griglia n x n per il minesweeper con m mine posizionate casualmente.
+    Genera una griglia n_row x n_col per il minesweeper con m mine posizionate casualmente.
     
     Args:
         n_row, n_col (int): Dimensioni della griglia (n_row x n_col)
