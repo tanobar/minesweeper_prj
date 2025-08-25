@@ -74,7 +74,7 @@ def calculate_degree(agent, var, unassigned, assignment):
                 continue
                 
             nx, ny = x + dx, y + dy
-            if 0 <= nx < agent.n and 0 <= ny < agent.n:
+            if 0 <= nx < agent.n_row and 0 <= ny < agent.n_col:
                 # Trova constraint che ha come cella centrale (nx, ny)
                 for constraint in agent.constraints:
                     if constraint["cell"] == (nx, ny) and var in constraint["neighbors"]:

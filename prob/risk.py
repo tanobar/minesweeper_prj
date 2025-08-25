@@ -18,7 +18,8 @@ def compute_cell_probs(knowledge, mine_cells=None, total_mines=None,
     - Celle fuori frontiera: prior p0 OUTSIDE calcolato rispettando il budget di mine.
     - Ricalibrazione soft SOLO sulle celle non-esatte.
     """
-    n = len(knowledge)
+    n_row = len(knowledge)
+    n_col = len(knowledge[0])
     mine_cells = set(mine_cells or [])
 
     # --- helper locali ---
@@ -28,7 +29,7 @@ def compute_cell_probs(knowledge, mine_cells=None, total_mines=None,
                 if di == 0 and dj == 0:
                     continue
                 r, c = i + di, j + dj
-                if 0 <= r < n and 0 <= c < n:
+                if 0 <= r < n_row and 0 <= c < n_col:
                     yield (r, c)
 
     def local_pressure_prob(v):
@@ -53,7 +54,7 @@ def compute_cell_probs(knowledge, mine_cells=None, total_mines=None,
         return sum(ratios) / len(ratios)
 
     # --- ignote candidate ---
-    unknown = [(i, j) for i in range(n) for j in range(n)
+    unknown = [(i, j) for i in range(n_row) for j in range(n_col)
                if knowledge[i][j] == "?" and (i, j) not in mine_cells]
     if not unknown:
         return {}
@@ -142,7 +143,8 @@ def pick_min_risk(knowledge, moves_made=None, mine_cells=None, **kwargs):
     """
     Sceglie la '?' con P(mina) minima (tie-break per coordinate).
     """
-    n = len(knowledge)
+    n_row = len(knowledge)
+    n_col = len(knowledge[0])
     moves_made = set(moves_made or [])
     mine_cells = set(mine_cells or [])
     forbidden = moves_made | mine_cells
@@ -176,8 +178,8 @@ def pick_min_risk(knowledge, moves_made=None, mine_cells=None, **kwargs):
         return choice
 
     # fallback: prima "?" libera
-    for i in range(n):
-        for j in range(n):
+    for i in range(n_row):
+        for j in range(n_col):
             if knowledge[i][j] == "?" and (i, j) not in forbidden:
                 return (i, j)
     return None
@@ -185,35 +187,38 @@ def pick_min_risk(knowledge, moves_made=None, mine_cells=None, **kwargs):
 # --- util locali ---
 
 def _info_score(knowledge, v):
-    n = len(knowledge); i, j = v
+    n_row = len(knowledge)
+    n_col = len(knowledge[0])
+    i, j = v
     s = 0
     for di in (-1,0,1):
         for dj in (-1,0,1):
             if di==0 and dj==0: continue
             r, c = i+di, j+dj
-            if 0<=r<n and 0<=c<n and knowledge[r][c] == "?":
+            if 0<=r<n_row and 0<=c<n_col and knowledge[r][c] == "?":
                 s += 1
     return s
 
-def neighbors8(i, j, n):
+def neighbors8(i, j, n_row, n_col):
     for di in (-1, 0, 1):
         for dj in (-1, 0, 1):
             if di == 0 and dj == 0: 
                 continue
             r, c = i + di, j + dj
-            if 0 <= r < n and 0 <= c < n:
+            if 0 <= r < n_row and 0 <= c < n_col:
                 return_cell = (r, c)
                 yield return_cell
 
 def local_pressure_prob(knowledge, mine_cells, v):
-    n = len(knowledge)
+    n_row = len(knowledge)
+    n_col = len(knowledge[0])
     i, j = v
     ratios = []
-    for r, c in neighbors8(i, j, n):
+    for r, c in neighbors8(i, j, n_row, n_col):
         cell = knowledge[r][c]
         if isinstance(cell, int) and cell >= 0:  # è un numero rivelato
             # quante mine note attorno a (r,c)?
-            neigh = list(neighbors8(r, c, n))
+            neigh = list(neighbors8(r, c, n_row, n_col))
             known_mines = sum((nr, nc) in mine_cells for (nr, nc) in neigh)
             unknowns = [(nr, nc) for (nr, nc) in neigh if knowledge[nr][nc] == "?" and (nr, nc) not in mine_cells]
             need = max(0, cell - known_mines)

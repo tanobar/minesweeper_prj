@@ -19,8 +19,8 @@ def safe_first_move(env, agent):
         tuple: (x, y, value) della cella rivelata
     """
     # Prima prova: cerca celle con valore 0
-    for i in range(env.n):
-        for j in range(env.n):
+    for i in range(env.n_row):
+        for j in range(env.n_col):
             if env.grid[i][j] == 0:
                 print(f"Prima mossa sicura: cella ({i}, {j}) con valore 0")
                 value = env.reveal(i, j)
@@ -28,8 +28,8 @@ def safe_first_move(env, agent):
                 return i, j, value
     
     # Seconda prova: cerca celle con valore 1
-    for i in range(env.n):
-        for j in range(env.n):
+    for i in range(env.n_row):
+        for j in range(env.n_col):
             if env.grid[i][j] == 1:
                 print(f"Prima mossa sicura: cella ({i}, {j}) con valore 1")
                 value = env.reveal(i, j)
@@ -37,8 +37,8 @@ def safe_first_move(env, agent):
                 return i, j, value
     
     # Ultima prova: cerca qualsiasi cella che non sia mina
-    for i in range(env.n):
-        for j in range(env.n):
+    for i in range(env.n_row):
+        for j in range(env.n_col):
             if env.grid[i][j] != "M":
                 print(f"Prima mossa sicura: cella ({i}, {j}) con valore {env.grid[i][j]}")
                 value = env.reveal(i, j)
@@ -61,25 +61,25 @@ def choose_agent_configuration():
     while True:
         choice = input("Scegli configurazione (1-5): ").strip()
         if choice == "1":
-            return Agent(n, strategy="random")
+            return Agent(n_row, n_col, strategy="random")
         elif choice == "2":
-            return Agent(n, strategy="backtracking")
+            return Agent(n_row, n_col, strategy="backtracking")
         elif choice == "3":
-            return Agent(n, strategy="backtracking_advanced")
+            return Agent(n_row, n_col, strategy="backtracking_advanced")
         elif choice == "4":
-            return Agent(n, strategy="backtracking_gac3")
+            return Agent(n_row, n_col, strategy="backtracking_gac3")
         elif choice == "5":
-            return Agent(n, strategy="backtracking_pb")
+            return Agent(n_row, n_col, strategy="backtracking_pb")
         else:
             print("Scelta non valida. Inserisci un numero da 1 a 5.")
 
 
-n, m = 10, 15  # Dimensione della griglia (n x n) e numero di mine m
+n_row, n_col, m = 6, 12, 10  # Dimensione della griglia (n x n) e numero di mine m
 
 # Configura l'agente
 agent = choose_agent_configuration()
 
-env = MinesweeperEnv(n, m)
+env = MinesweeperEnv(n_row, n_col, m)
 
 agent.total_mines = m
 
@@ -107,7 +107,7 @@ root.title('Minesweeper')
 root.lift()
 root.attributes("-topmost", True)
 root.after(0, lambda: root.attributes("-topmost", False))
-gui = MinesweeperGUI(root, n)
+gui = MinesweeperGUI(root, n_row, n_col)
 start = time.time()
 while True:
 

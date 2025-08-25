@@ -7,17 +7,18 @@ from itertools import product
 
 
 class Agent:
-    def __init__(self, n, strategy="backtracking", total_mines=None):
+    def __init__(self, n_row, n_col, strategy="backtracking", total_mines=None):
         """
         Agente modulare per minesweeper.
         
         Args:
-            n: dimensione della griglia (n x n)
+            n_row, n_col: dimensioni della griglia (n_row x n_col)
             strategy: strategia principale ("backtracking", "backtracking_advanced", "backtracking_gac3", "backtracking_pb", "random")
             total_mines: numero totale di mine nel gioco
         """
-        self.n = n
-        self.knowledge = [["?" for _ in range(n)] for _ in range(n)]
+        self.n_row = n_row
+        self.n_col = n_col
+        self.knowledge = [["?" for _ in range(n_col)] for _ in range(n_row)]
         self.moves_made = set()
         self.safe_cells = set()
         self.mine_cells = set()
@@ -30,7 +31,7 @@ class Agent:
         if strategy in ["backtracking", "backtracking_advanced", "backtracking_gac3", "backtracking_pb"]:
             self.constraints = []  # Lista di vincoli: [{"cell": tuple, " "neighbors": set(), "count": int}, ...]
 
-        self.Domains = {(x, y): {0, 1} for x in range(n) for y in range(n)}    
+        self.Domains = {(x, y): {0, 1} for x in range(n_row) for y in range(n_col)}    
         self.pruned = 0
 
     def observe(self, x, y, value):
@@ -62,7 +63,7 @@ class Agent:
                         if dx == 0 and dy == 0:
                             continue
                         nx, ny = x + dx, y + dy
-                        if 0 <= nx < self.n and 0 <= ny < self.n:
+                        if 0 <= nx < self.n_row and 0 <= ny < self.n_col:
                             if (nx, ny) not in self.moves_made:
                                 self.safe_cells.add((nx, ny))
             elif value > 0:
@@ -78,7 +79,7 @@ class Agent:
                     if dx == 0 and dy == 0:
                         continue
                     nx, ny = x + dx, y + dy
-                    if 0 <= nx < self.n and 0 <= ny < self.n:
+                    if 0 <= nx < self.n_row and 0 <= ny < self.n_col:
                         if (nx, ny) not in self.moves_made:
                             self.safe_cells.add((nx, ny))
 
@@ -99,7 +100,7 @@ class Agent:
                     continue
                     
                 nx, ny = x + dx, y + dy
-                if 0 <= nx < self.n and 0 <= ny < self.n:
+                if 0 <= nx < self.n_row and 0 <= ny < self.n_col:
                     if (nx, ny) in self.mine_cells or self.knowledge[nx][ny] == "X":
                         adjacent_mines += 1
                     elif self.knowledge[nx][ny] == "?":
@@ -135,7 +136,7 @@ class Agent:
         """
         Verifica se l'agente ha raggiunto la condizione di vittoria.
         """
-        return env.check_victory(self.knowledge, total_non_mine_cells = self.n*self.n - self.total_mines)
+        return env.check_victory(self.knowledge, total_non_mine_cells = self.n_row*self.n_col - self.total_mines)
     
 
     def get_variables(self):
@@ -230,8 +231,8 @@ class Agent:
             
         # Ricostruisci vincoli aggiornati
         self.constraints = []
-        for i in range(self.n):
-            for j in range(self.n):
+        for i in range(self.n_row):
+            for j in range(self.n_col):
                 if isinstance(self.knowledge[i][j], int) and self.knowledge[i][j] > 0:
                     self.add_constraint(i, j, self.knowledge[i][j])
         
@@ -354,8 +355,8 @@ class Agent:
         # Se non ci sono celle sicure, fallback basato sulla strategia
         unknown = [
             (i, j)
-            for i in range(self.n)
-            for j in range(self.n)
+            for i in range(self.n_row)
+            for j in range(self.n_col)
             if self.knowledge[i][j] == "?"
                and (i, j) not in self.mine_cells
                and (i, j) not in self.moves_made
@@ -400,8 +401,8 @@ class Agent:
         # Altrimenti esplora guidato dalla probabilità (fallback)
         unknown = [
             (i, j)
-            for i in range(self.n)
-            for j in range(self.n)
+            for i in range(self.n_row)
+            for j in range(self.n_col)
             if self.knowledge[i][j] == "?"
                and (i, j) not in self.mine_cells
                and (i, j) not in self.moves_made

@@ -61,22 +61,22 @@ class GameRunner:
     
     def safe_first_move(self, env, agent):
         """Prima mossa sicura garantita."""
-        for i in range(env.n):
-            for j in range(env.n):
+        for i in range(env.n_row):
+            for j in range(env.n_col):
                 if env.grid[i][j] == 0:
                     value = env.reveal(i, j)
                     agent.observe(i, j, value)
                     return i, j, value
         
-        for i in range(env.n):
-            for j in range(env.n):
+        for i in range(env.n_row):
+            for j in range(env.n_col):
                 if env.grid[i][j] == 1:
                     value = env.reveal(i, j)
                     agent.observe(i, j, value)
                     return i, j, value
         
-        for i in range(env.n):
-            for j in range(env.n):
+        for i in range(env.n_row):
+            for j in range(env.n_col):
                 if env.grid[i][j] != "M":
                     value = env.reveal(i, j)
                     agent.observe(i, j, value)

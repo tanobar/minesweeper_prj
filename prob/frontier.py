@@ -1,13 +1,13 @@
 # prob/frontier.py
 from collections import defaultdict, deque
 
-def neighbors(n, i, j):
+def neighbors(n_row, n_col, i, j):
     for di in (-1, 0, 1):
         for dj in (-1, 0, 1):
             if di == 0 and dj == 0:
                 continue
             r, c = i + di, j + dj
-            if 0 <= r < n and 0 <= c < n:
+            if 0 <= r < n_row and 0 <= c < n_col:
                 yield (r, c)
 
 def build_constraints(knowledge, mine_cells):
@@ -20,19 +20,20 @@ def build_constraints(knowledge, mine_cells):
       constraints: list di dict {"vars": set[(i,j)], "count": int}
       unknowns: set di tutte le celle ignote coinvolte in almeno un vincolo
     """
-    n = len(knowledge)
+    n_row = len(knowledge)
+    n_col = len(knowledge[0])
     constraints = []
     unknowns = set()
     mine_set = set(mine_cells or [])
 
-    for i in range(n):
-        for j in range(n):
+    for i in range(n_row):
+        for j in range(n_col):
             v = knowledge[i][j]
             # Una cella rivelata numerica è un int (0..8)
             if isinstance(v, int):
                 unk = []
                 known_mines = 0
-                for r, c in neighbors(n, i, j):
+                for r, c in neighbors(n_row, n_col, i, j):
                     if knowledge[r][c] == "?":
                         unk.append((r, c))
                     elif knowledge[r][c] == "X" or (r, c) in mine_set:
