@@ -156,10 +156,11 @@ while True:
         if game_over:
             break
 
-    elif move == "flag":
-        x, y = action[1], action[2]
-        env.flag(x, y)
-        agent.mark_mine(x, y)
+    elif move == "flag_all":
+        mine_cells = action[1]
+        for x, y in mine_cells:
+            env.flag(x, y)
+            agent.mark_mine(x, y)
 
     #agent.print_grid()
     gui.draw_grid(agent.knowledge, agent.to_flag, '')
