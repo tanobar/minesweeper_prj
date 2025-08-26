@@ -1,10 +1,9 @@
 """
-assessment.py - Assessment per confrontare le 5 strategie minesweeper.
+assessment.py - Assessment semplificato per confrontare le 5 strategie minesweeper.
 
 Sistema focalizzato che raccoglie solo le metriche essenziali:
 - Win rate
 - Numero medio di celle rivelate
-- Precisione mosse sicure
 - Tempo medio per mossa/partita
 
 Confronta le 5 strategie: random, backtracking, backtracking_advanced, backtracking_gac3, backtracking_pb
@@ -36,8 +35,6 @@ class GameResult:
     revealed_cells: int
     time_total: float
     time_per_move: float
-    safe_moves_correct: int
-    safe_moves_total: int
     grid_size_h: int
     grid_size_w: int
     mine_count: int
@@ -54,7 +51,6 @@ class StrategyMetrics:
     avg_steps: float
     avg_time_total: float
     avg_time_per_move: float
-    safe_move_precision: float
 
 
 class GameRunner:
@@ -96,10 +92,6 @@ class GameRunner:
                     revealed += 1
         return revealed
     
-    def is_safe_move_correct(self, env, x, y):
-        """Verifica se una mossa è sicura."""
-        return env.grid[x][y] != "M"
-    
     def play_game(self, strategy: str, grid_size_h: int, grid_size_w: int, mine_count: int, seed: int) -> GameResult:
         """Esegue una singola partita."""
         
@@ -109,8 +101,6 @@ class GameRunner:
         
         start_time = time.time()
         move_times = []
-        safe_moves_correct = 0
-        safe_moves_total = 0
         steps = 0
         
         try:
@@ -125,17 +115,13 @@ class GameRunner:
                 action = agent.choose_action()
                 
                 if action is None:
+                    result = "stuck"
                     break
                 
                 move_type = action[0]
                 
                 if move_type == "reveal":
                     x, y = action[1], action[2]
-                    
-                    safe_moves_total += 1
-                    if self.is_safe_move_correct(env, x, y):
-                        safe_moves_correct += 1
-                    
                     value = env.reveal(x, y)
                     move_times.append(time.time() - move_start)
                     steps += 1
@@ -145,8 +131,7 @@ class GameRunner:
                         result = "mine"
                         break
                     
-                    if value is not None:
-                        agent.observe(x, y, value)
+                    agent.observe(x, y, value)
                 
                 elif move_type == "reveal_all_safe":
                     safe_cells = action[1]
@@ -154,10 +139,6 @@ class GameRunner:
                     
                     game_over = False
                     for x, y in safe_cells:
-                        safe_moves_total += 1
-                        if self.is_safe_move_correct(env, x, y):
-                            safe_moves_correct += 1
-                        
                         value = env.reveal(x, y)
                         steps += 1
                         
@@ -167,8 +148,7 @@ class GameRunner:
                             game_over = True
                             break
                         
-                        if value is not None:
-                            agent.observe(x, y, value)
+                        agent.observe(x, y, value)
                     
                     if game_over:
                         break
@@ -183,8 +163,6 @@ class GameRunner:
                 if agent.check_victory_status(env):
                     result = "win"
                     break
-            else:
-                result = "stuck"
             
             total_time = time.time() - start_time
             revealed = self.count_revealed_cells(agent.knowledge)
@@ -197,8 +175,6 @@ class GameRunner:
                 revealed_cells=revealed,
                 time_total=total_time,
                 time_per_move=avg_move_time,
-                safe_moves_correct=safe_moves_correct,
-                safe_moves_total=safe_moves_total,
                 grid_size_h=grid_size_h,
                 grid_size_w=grid_size_w,
                 mine_count=mine_count,
@@ -217,8 +193,6 @@ class GameRunner:
                 revealed_cells=revealed,
                 time_total=total_time,
                 time_per_move=avg_move_time,
-                safe_moves_correct=safe_moves_correct,
-                safe_moves_total=safe_moves_total,
                 grid_size_h=grid_size_h,
                 grid_size_w=grid_size_w,
                 mine_count=mine_count,
@@ -311,10 +285,6 @@ class Assessment:
             avg_time_total = statistics.mean([r.time_total for r in results])
             avg_time_per_move = statistics.mean([r.time_per_move for r in results])
             
-            total_safe_moves = sum([r.safe_moves_total for r in results])
-            correct_safe_moves = sum([r.safe_moves_correct for r in results])
-            safe_move_precision = correct_safe_moves / total_safe_moves if total_safe_moves > 0 else 0
-            
             metrics[strategy] = StrategyMetrics(
                 strategy=strategy,
                 games_played=total_games,
@@ -322,8 +292,7 @@ class Assessment:
                 avg_revealed_cells=avg_revealed,
                 avg_steps=avg_steps,
                 avg_time_total=avg_time_total,
-                avg_time_per_move=avg_time_per_move,
-                safe_move_precision=safe_move_precision
+                avg_time_per_move=avg_time_per_move
             )
         
         return metrics
@@ -341,9 +310,9 @@ class Assessment:
         
         # Tabella riassuntiva
         report_lines.append("RISULTATI CONFRONTO")
-        report_lines.append("-" * 50)
-        report_lines.append(f"{'Strategia':<20} {'Win Rate':<10} {'Celle Avg':<10} {'Precisione':<12} {'Tempo/Mossa':<12}")
-        report_lines.append("-" * 50)
+        report_lines.append("-" * 60)
+        report_lines.append(f"{'Strategia':<20} {'Win Rate':<10} {'Celle Avg':<10} {'Tempo/Mossa':<12}")
+        report_lines.append("-" * 60)
         
         sorted_strategies = sorted(metrics.items(), key=lambda x: x[1].win_rate, reverse=True)
         
@@ -351,14 +320,13 @@ class Assessment:
             report_lines.append(
                 f"{strategy:<20} {metric.win_rate*100:>7.1f}% "
                 f"{metric.avg_revealed_cells:>8.1f} "
-                f"{metric.safe_move_precision*100:>9.1f}% "
                 f"{metric.avg_time_per_move*1000:>9.1f}ms"
             )
         
         report_lines.append("")
         
         # Analisi dettagliata
-        report_lines.append("🔍 ANALISI DETTAGLIATA")
+        report_lines.append("ANALISI DETTAGLIATA")
         report_lines.append("-" * 30)
         
         for strategy, metric in sorted_strategies:
@@ -368,17 +336,15 @@ class Assessment:
             report_lines.append(f"  Steps per game: {metric.avg_steps:.1f}")
             report_lines.append(f"  Tempo per game: {metric.avg_time_total:.3f}s")
             report_lines.append(f"  Tempo per mossa: {metric.avg_time_per_move*1000:.1f}ms")
-            report_lines.append(f"  Precisione mosse sicure: {metric.safe_move_precision*100:.1f}%")
             report_lines.append("")
         
         # Conclusioni
         if sorted_strategies:
             best = sorted_strategies[0]
-            report_lines.append("🏆 CONCLUSIONI")
+            report_lines.append("CONCLUSIONI")
             report_lines.append("-" * 20)
             report_lines.append(f"Migliore strategia: {best[0]}")
             report_lines.append(f"  - Win rate: {best[1].win_rate*100:.1f}%")
-            report_lines.append(f"  - Precisione: {best[1].safe_move_precision*100:.1f}%")
             report_lines.append(f"  - Velocità: {best[1].avg_time_per_move*1000:.1f}ms/mossa")
             
             # Confronto con/senza PB
@@ -393,22 +359,15 @@ class Assessment:
             
             if pb_strategy and no_pb_strategies:
                 report_lines.append("")
-                report_lines.append("📈 IMPATTO PROBABILISTIC REASONING (PB)")
+                report_lines.append("IMPATTO PROBABILISTIC REASONING (PB)")
                 report_lines.append("-" * 45)
                 
                 avg_no_pb_win_rate = statistics.mean([m[1].win_rate for m in no_pb_strategies])
                 pb_win_rate = pb_strategy[1].win_rate
                 
-                avg_no_pb_precision = statistics.mean([m[1].safe_move_precision for m in no_pb_strategies])
-                pb_precision = pb_strategy[1].safe_move_precision
-                
                 report_lines.append(f"Win rate con PB: {pb_win_rate*100:.1f}%")
                 report_lines.append(f"Win rate senza PB (media): {avg_no_pb_win_rate*100:.1f}%")
                 report_lines.append(f"Miglioramento: {(pb_win_rate - avg_no_pb_win_rate)*100:+.1f}%")
-                report_lines.append("")
-                report_lines.append(f"Precisione con PB: {pb_precision*100:.1f}%")
-                report_lines.append(f"Precisione senza PB (media): {avg_no_pb_precision*100:.1f}%")
-                report_lines.append(f"Miglioramento: {(pb_precision - avg_no_pb_precision)*100:+.1f}%")
         
         report_lines.append("")
         report_lines.append("=" * 80)

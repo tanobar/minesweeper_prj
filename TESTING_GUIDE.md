@@ -84,52 +84,14 @@ python assessment.py --mode quick --results-dir "my_tests"
 
 ### File di output salvati in `results/`
 
-1. **Report testuale** (`strategy_comparison_YYYYMMDD_HHMMSS.txt`):
-   ```
-    RISULTATI CONFRONTO
-   --------------------------------------------------
-   Strategia            Win Rate   Celle Avg  Precisione   Tempo/Mossa
-   --------------------------------------------------
-   backtracking_pb         69.5%     48.2      99.1%       2.1ms
-   backtracking           47.5%     44.8      98.8%       0.8ms
-   [...]
-   
-    CONCLUSIONI
-   Migliore strategia: backtracking_pb
-   
-    IMPATTO PROBABILISTIC REASONING (PB)
-   Win rate con PB: 69.5%
-   Win rate senza PB (media): 44.2%
-   Miglioramento: +25.3%
-   ```
-
-2. **Dati JSON** (`strategy_data_YYYYMMDD_HHMMSS.json`):
-   ```json
-   {
-     "backtracking_pb": {
-       "win_rate": 0.695,
-       "avg_cells_revealed": 48.2,
-       "avg_safe_move_accuracy": 0.991,
-       "avg_time_per_move": 0.00211
-     }
-   }
-   ```
-
 ##  Metriche raccolte
 
 - **Win Rate:** Percentuale di partite vinte su totale
 - **Celle Rivelate (media):** Quante celle scopre prima di perdere/vincere
-- **Precisione Mosse Sicure:** Accuratezza nell'identificare celle sicure
 - **Tempo per Mossa:** Performance temporale (ms per mossa)
 - **Tempo per Partita:** Tempo totale per completare una partita
 
-##  Requisiti
 
-- Python 3.7+
-- Moduli del progetto: `agent.py`, `minesweeper_env.py`, cartella `prob/`
-- Nessuna dipendenza esterna
-
-## Suggerimenti
 
 - **Per test veloci:** Usa `quick_test.py` durante lo sviluppo
 - **Per dati affidabili:** Usa `assessment.py --mode medium` o `--mode full`
