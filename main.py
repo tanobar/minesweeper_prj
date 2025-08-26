@@ -18,32 +18,16 @@ def safe_first_move(env, agent):
     Returns:
         tuple: (x, y, value) della cella rivelata
     """
-    # Prima prova: cerca celle con valore 0
-    for i in range(env.n_row):
-        for j in range(env.n_col):
-            if env.grid[i][j] == 0:
-                print(f"Prima mossa sicura: cella ({i}, {j}) con valore 0")
-                value = env.reveal(i, j)
-                agent.observe(i, j, value)
-                return i, j, value
-    
-    # Seconda prova: cerca celle con valore 1
-    for i in range(env.n_row):
-        for j in range(env.n_col):
-            if env.grid[i][j] == 1:
-                print(f"Prima mossa sicura: cella ({i}, {j}) con valore 1")
-                value = env.reveal(i, j)
-                agent.observe(i, j, value)
-                return i, j, value
-    
-    # Ultima prova: cerca qualsiasi cella che non sia mina
-    for i in range(env.n_row):
-        for j in range(env.n_col):
-            if env.grid[i][j] != "M":
-                print(f"Prima mossa sicura: cella ({i}, {j}) con valore {env.grid[i][j]}")
-                value = env.reveal(i, j)
-                agent.observe(i, j, value)
-                return i, j, value
+    # Cerca in ordine: 0, 1, qualsiasi non-mina
+    for target_value in [0, 1, None]:  # None = qualsiasi non-mina
+        for i in range(env.n_row):
+            for j in range(env.n_col):
+                cell_value = env.grid[i][j]
+                if (target_value is None and cell_value != "M") or cell_value == target_value:
+                    print(f"Prima mossa sicura: cella ({i}, {j}) con valore {cell_value}")
+                    value = env.reveal(i, j)
+                    agent.observe(i, j, value)
+                    return i, j, value
     
     # Questo non dovrebbe mai succedere in una griglia valida
     raise Exception("Impossibile trovare una prima mossa sicura!")
@@ -74,7 +58,7 @@ def choose_agent_configuration():
             print("Scelta non valida. Inserisci un numero da 1 a 5.")
 
 
-n_row, n_col, m = 16, 30, 100  # Dimensione della griglia (r x c) e numero di mine m
+n_row, n_col, m = 10, 20, 40  # Dimensione della griglia (r x c) e numero di mine m
 
 # Configura l'agente
 agent = choose_agent_configuration()
@@ -159,7 +143,6 @@ while True:
     elif move == "flag_all":
         mine_cells = action[1]
         for x, y in mine_cells:
-            env.flag(x, y)
             agent.mark_mine(x, y)
 
     #agent.print_grid()
@@ -167,6 +150,12 @@ while True:
 
     # Controlla se l'agente ha vinto
     if agent.check_victory_status(env):
+        # Se ha vinto, flagga automaticamente tutte le mine rimanenti
+        for i in range(n_row):
+            for j in range(n_col):
+                if env.grid[i][j] == "M" and agent.knowledge[i][j] == "?":
+                    agent.mark_mine(i, j)
+        
         #agent.print_grid()
         gui.draw_grid(agent.knowledge, agent.to_flag, 'y')
         #play_melody(WIN_SOUND)

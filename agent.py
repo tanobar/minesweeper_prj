@@ -32,8 +32,7 @@ class Agent:
         if strategy in ["backtracking", "backtracking_advanced", "backtracking_gac3", "backtracking_pb"]:
             self.constraints = []  # Lista di vincoli: [{"cell": tuple, " "neighbors": set(), "count": int}, ...]
 
-        self.Domains = {(x, y): {0, 1} for x in range(n_row) for y in range(n_col)}    
-        self.pruned = 0
+        self.Domains = {(x, y): {0, 1} for x in range(n_row) for y in range(n_col)}
 
     def observe(self, x, y, value):
         """
@@ -56,33 +55,27 @@ class Agent:
 
     def _observe_backtracking(self, x, y, value):
         """Logica di osservazione per strategia backtracking."""
-        if isinstance(value, int):
-            if value == 0:
-                # Se il valore è 0, tutte le celle adiacenti sono sicure
-                for dx in [-1, 0, 1]:
-                    for dy in [-1, 0, 1]:
-                        if dx == 0 and dy == 0:
-                            continue
-                        nx, ny = x + dx, y + dy
-                        if 0 <= nx < self.n_row and 0 <= ny < self.n_col:
-                            if (nx, ny) not in self.moves_made:
-                                self.safe_cells.add((nx, ny))
-            elif value > 0:
-                self.add_constraint(x, y, value)
+        if isinstance(value, int) and value == 0:
+            self._add_safe_neighbors(x, y)
+            # Note: I vincoli vengono creati in infer_safe_and_mines(), non qui
 
 
     def _observe_random(self, x, y, value):
         """Logica di osservazione per strategia random."""
         if value == 0:
-            # Le celle adiacenti sono probabilmente sicure: da rivelare
-            for dx in [-1, 0, 1]:
-                for dy in [-1, 0, 1]:
-                    if dx == 0 and dy == 0:
-                        continue
-                    nx, ny = x + dx, y + dy
-                    if 0 <= nx < self.n_row and 0 <= ny < self.n_col:
-                        if (nx, ny) not in self.moves_made:
-                            self.safe_cells.add((nx, ny))
+            self._add_safe_neighbors(x, y)
+
+
+    def _add_safe_neighbors(self, x, y):
+        """Aggiunge le celle adiacenti a (x,y) come sicure se non già esplorate."""
+        for dx in [-1, 0, 1]:
+            for dy in [-1, 0, 1]:
+                if dx == 0 and dy == 0:
+                    continue
+                nx, ny = x + dx, y + dy
+                if 0 <= nx < self.n_row and 0 <= ny < self.n_col:
+                    if (nx, ny) not in self.moves_made:
+                        self.safe_cells.add((nx, ny))
 
 
     def add_constraint(self, x, y, value):
@@ -256,7 +249,6 @@ class Agent:
                     self.knowledge[var[0]][var[1]] = "X"  # Marca anche nella knowledge per visualizzazione
                 else:
                     self.safe_cells.add(var)
-                self.pruned += 1
             else:
                 if var in self.safe_cells or var in self.mine_cells:
                     continue
