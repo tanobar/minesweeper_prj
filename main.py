@@ -74,7 +74,7 @@ def choose_agent_configuration():
             print("Scelta non valida. Inserisci un numero da 1 a 5.")
 
 
-n_row, n_col, m = 16, 30, 100  # Dimensione della griglia (n x n) e numero di mine m
+n_row, n_col, m = 16, 30, 100  # Dimensione della griglia (r x c) e numero di mine m
 
 # Configura l'agente
 agent = choose_agent_configuration()
@@ -85,16 +85,16 @@ agent.total_mines = m
 agent.to_flag = m
 
 print(f"\nUsando strategia: {agent.strategy}")
-print("\nGriglia reale:")
+"""print("\nGriglia reale:")
 env.print_grid()
-print()
+print()"""
 
 # Convenzione minesweeper: la prima mossa è sempre sicura
 safe_first_move(env, agent)
 
-print("Stato agente dopo prima mossa:")
+"""print("Stato agente dopo prima mossa:")
 agent.print_grid()
-print()
+print()"""
 
 """#suoni
 MINE_SOUND = [(523, 0.2), (440, 0.2), (330, 0.4)]
@@ -166,7 +166,7 @@ while True:
 
     # Controlla se l'agente ha vinto
     if agent.check_victory_status(env):
-        agent.print_grid()
+        #agent.print_grid()
         gui.draw_grid(agent.knowledge, agent.to_flag, 'y')
         #play_melody(WIN_SOUND)
         print(f"\n HAI VINTO IN {move_count} MOSSE!")
