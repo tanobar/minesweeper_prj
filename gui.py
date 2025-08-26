@@ -7,9 +7,17 @@ class MinesweeperGUI:
         self.n_col = n_col
         self.cell_size = cell_size
 
+        # Get screen size to auto-scale cell size
+        screen_w = root.winfo_screenwidth()
+        screen_h = root.winfo_screenheight()
+
         # reserve space above the grid for the "mines left" box
         self.header_height = 50  
 
+        # Compute max cell size so board fits on screen
+        max_cell_w = (screen_w - 100) // n_col
+        max_cell_h = (screen_h - 200 - self.header_height) // n_row
+        self.cell_size = min(max_cell_w, max_cell_h, 40)
         # total canvas size = grid + header
         canvas_width = n_col * cell_size
         canvas_height = n_row * cell_size + self.header_height
@@ -31,7 +39,7 @@ class MinesweeperGUI:
         self.canvas.delete("all")  # clear previous drawing
 
         # --- Draw mines left box at the top ---
-        box_width = 120
+        box_width = 140
         box_height = 40
         center_x = (self.n_col * self.cell_size) // 2
         x1 = center_x - box_width // 2
@@ -77,21 +85,13 @@ class MinesweeperGUI:
                         fill=self.colors[value - 1]
                     )
 
-        # --- Draw win/lose message centered on full canvas ---
-        center_x = int(self.canvas["width"]) // 2
-        center_y = int(self.canvas["height"]) // 2
-
-        if game == 'n':
+        if game in ('n', 'y'):
+            center_x = self.n_col * self.cell_size // 2
+            center_y = self.header_height + (self.n_row * self.cell_size) // 2
+            text = "wtf bro :(" if game == 'n' else "૮꒰ ˶• ༝ •˶꒱ა"
             self.canvas.create_text(
                 center_x, center_y,
-                text="wtf bro :(",
-                fill="black",
-                font=("Helvetica", 30, "bold")
-            )
-        elif game == 'y':
-            self.canvas.create_text(
-                center_x, center_y,
-                text="૮꒰ ˶• ༝ •˶꒱ა",
+                text=text,
                 fill="black",
                 font=("Helvetica", 30, "bold")
             )

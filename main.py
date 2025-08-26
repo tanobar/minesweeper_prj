@@ -74,7 +74,7 @@ def choose_agent_configuration():
             print("Scelta non valida. Inserisci un numero da 1 a 5.")
 
 
-n_row, n_col, m = 16, 30, 10  # Dimensione della griglia (n x n) e numero di mine m
+n_row, n_col, m = 16, 30, 100  # Dimensione della griglia (n x n) e numero di mine m
 
 # Configura l'agente
 agent = choose_agent_configuration()
@@ -177,5 +177,5 @@ while True:
     #print()
     time.sleep(0.3)
 end = time.time()
-print("\n Tempo trascorso:", end - start, "secondi")
+print("\n Tempo trascorso:", end - start - move_count*0.3, "secondi")
 root.mainloop()
