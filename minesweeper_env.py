@@ -29,27 +29,6 @@ def generate_grid(n_row, n_col, m):
     for row, col in mine_positions:
         grid[row][col] = "M"
 
-    """"
-    # Calcola i numeri per le celle non-mine
-    for i in range(n):
-        for j in range(n):
-            if grid[i][j] != "M":
-                count = 0
-                # Controlla tutte le 8 direzioni adiacenti
-                for di in [-1, 0, 1]:
-                    for dj in [-1, 0, 1]:
-                        # Salta la cella centrale
-                        if di == 0 and dj == 0:
-                            continue
-                        
-                        ni, nj = i + di, j + dj
-                        # Verifica che la posizione sia valida
-                        if 0 <= ni < n and 0 <= nj < n:
-                            if grid[ni][nj] == "M":
-                                count += 1
-                
-                grid[i][j] = count
-    """
     # Calcola i numeri per le celle intorno alle mine
     for i,j in mine_positions:
         # Controlla tutte le 8 direzioni adiacenti
