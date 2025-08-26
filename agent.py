@@ -338,11 +338,11 @@ class Agent:
                 unflagged_mines.append((x, y))
         
         if unflagged_mines:
-            x, y = unflagged_mines[0]
-            # Marca come mossa fatta per evitare di flaggare di nuovo
-            self.moves_made.add((x, y))
-            self.to_flag -= 1
-            return ("flag", x, y)
+            # Marca tutte le mine come mosse fatte e decrementa il contatore
+            for x, y in unflagged_mines:
+                self.moves_made.add((x, y))
+                self.to_flag -= 1
+            return ("flag_all", unflagged_mines)
         
         # Seconda priorità: celle sicure (rivela tutte quelle disponibili)
         available_safe = []
@@ -391,7 +391,20 @@ class Agent:
         """
         Sceglie la prossima azione da fare casualmente.
         """
-        # Priorità: celle sicure (rivela tutte quelle disponibili)
+        # Prima priorità: flagga le mine che non sono ancora state flaggate (se ce ne sono)
+        unflagged_mines = []
+        for x, y in self.mine_cells:
+            if (x, y) not in self.moves_made and self.knowledge[x][y] == "X":
+                unflagged_mines.append((x, y))
+        
+        if unflagged_mines:
+            # Marca tutte le mine come mosse fatte e decrementa il contatore
+            for x, y in unflagged_mines:
+                self.moves_made.add((x, y))
+                self.to_flag -= 1
+            return ("flag_all", unflagged_mines)
+        
+        # Seconda priorità: celle sicure (rivela tutte quelle disponibili)
         available_safe = []
         for x, y in sorted(self.safe_cells):
             if (x, y) not in self.moves_made:
