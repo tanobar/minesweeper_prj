@@ -19,8 +19,8 @@ class MinesweeperGUI:
         max_cell_h = (screen_h - 200 - self.header_height) // n_row
         self.cell_size = min(max_cell_w, max_cell_h, 40)
         # total canvas size = grid + header
-        canvas_width = n_col * cell_size
-        canvas_height = n_row * cell_size + self.header_height
+        canvas_width = n_col * self.cell_size
+        canvas_height = n_row * self.cell_size + self.header_height
 
         self.canvas = tk.Canvas(root, width=canvas_width, height=canvas_height)
         self.canvas.pack()
