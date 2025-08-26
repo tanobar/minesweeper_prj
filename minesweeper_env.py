@@ -76,23 +76,6 @@ class MinesweeperEnv:
         return revealed_value
     
 
-    def flag(self, x, y):
-        """
-        Contrassegna una cella come flaggata (contenente una mina).
-        Questo metodo per ora non fa nulla, ma può essere esteso in futuro.
-        
-        Args:
-            x (int): Coordinata riga (0-based)
-            y (int): Coordinata colonna (0-based)
-        """
-        # Verifica che le coordinate siano valide
-        if not (0 <= x < self.n_row and 0 <= y < self.n_col):
-            raise ValueError(f"Coordinate non valide: ({x}, {y}). La griglia è {self.n_row}x{self.n_col}")
-        
-        # Per ora questo metodo non fa nulla, la logica del flag è gestita dall'agente
-        pass
-    
-
     def check_victory(self, agent_knowledge, total_non_mine_cells):
         """
         Verifica se l'agente ha raggiunto la condizione di vittoria.
