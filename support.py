@@ -33,8 +33,8 @@ def select_unassigned_variable(agent, unassigned, assignment):
         elif legal_values == min_values:
             candidates.append(var)
     
-    # Seconda fase: degree heuristic se strategia avanzata, gac3 o pb e necessario
-    if len(candidates) == 1 or agent.strategy not in ["backtracking_advanced", "backtracking_gac3", "backtracking_pb"]:
+    # Seconda fase: degree heuristic se strategia avanzata o gac3 e necessario
+    if len(candidates) == 1 or agent.strategy not in ["backtracking_advanced", "backtracking_gac3"]:
         return candidates[0]
     
     max_degree = -1
