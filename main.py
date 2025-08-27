@@ -66,16 +66,9 @@ agent.total_mines = m
 agent.to_flag = m
 
 print(f"\nUsando strategia: {agent.strategy}")
-"""print("\nGriglia reale:")
-env.print_grid()
-print()"""
 
 # Convenzione minesweeper: la prima mossa è sempre sicura
 safe_first_move(env, agent)
-
-"""print("Stato agente dopo prima mossa:")
-agent.print_grid()
-print()"""
 
 """#suoni
 MINE_SOUND = [(523, 0.2), (440, 0.2), (330, 0.4)]
@@ -108,7 +101,6 @@ while True:
             print(f"BOOM! Cella ({x}, {y}) era una mina!")
             agent.observe(x, y, value)
             print("\nStato finale:")
-            #agent.print_grid()
             gui.draw_grid(agent.knowledge,  agent.to_flag, 'n')
             #play_melody(MINE_SOUND)
             print("\nGAME OVER.")
@@ -142,7 +134,6 @@ while True:
         for x, y in mine_cells:
             agent.mark_mine(x, y)
 
-    #agent.print_grid()
     gui.draw_grid(agent.knowledge, agent.to_flag, '')
 
     # Controlla se l'agente ha vinto
@@ -153,7 +144,6 @@ while True:
                 if env.grid[i][j] == "M" and agent.knowledge[i][j] == "?":
                     agent.mark_mine(i, j)
         
-        #agent.print_grid()
         gui.draw_grid(agent.knowledge, agent.to_flag, 'y')
         #play_melody(WIN_SOUND)
         print(f"\n HAI VINTO IN {move_count} MOSSE!")
@@ -161,7 +151,6 @@ while True:
     
     move_count += 1
 
-    #print()
 end = time.time()
 print("\n Tempo trascorso:", end - start, "secondi")
 root.mainloop()
