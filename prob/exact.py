@@ -178,6 +178,16 @@ class ExactEnumeration:
         self._search_simple(idx + 1, order, assign)
         assign.pop(v, None)
 
+    def marginals(self):
+        """
+        Esegue l'enumerazione e restituisce le marginali come dict {(i,j): p}.
+        """
+        res = self.run()
+        if res is None:
+            return {}
+        return res["marginals"]
+
+
     def run(self):
         assign = {}
         # Per componenti piccole, enumerazione completa semplice (robusta)
