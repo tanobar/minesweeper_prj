@@ -37,10 +37,9 @@ def choose_agent_configuration():
     print("2. Backtracking CSP (base)")
     print("3. Backtracking CSP (con euristiche)")
     print("4. Backtracking CSP (con euristiche + GAC3)")
-    print("5. Backtracking CSP (con euristiche + GAC3 + PB)")
     
     while True:
-        choice = input("Scegli configurazione (1-5): ").strip()
+        choice = input("Scegli configurazione (1-4): ").strip()
         if choice == "1":
             return Agent(n_row, n_col, strategy="random")
         elif choice == "2":
@@ -49,13 +48,11 @@ def choose_agent_configuration():
             return Agent(n_row, n_col, strategy="backtracking_advanced")
         elif choice == "4":
             return Agent(n_row, n_col, strategy="backtracking_gac3")
-        elif choice == "5":
-            return Agent(n_row, n_col, strategy="backtracking_pb")
         else:
-            print("Scelta non valida. Inserisci un numero da 1 a 5.")
+            print("Scelta non valida. Inserisci un numero da 1 a 4.")
 
 
-n_row, n_col, m = 16, 32, 99  # Dimensione della griglia (r x c) e numero di mine m
+n_row, n_col, m = 8, 8, 10  # Dimensione della griglia (r x c) e numero di mine m
 
 # Configura l'agente
 agent = choose_agent_configuration()
@@ -73,6 +70,9 @@ print()"""
 # Convenzione minesweeper: la prima mossa è sempre sicura
 safe_first_move(env, agent)
 
+print("Stato agente dopo prima mossa:")
+agent.print_grid()
+print()
 
 move_count = 0
 # ciclo di gioco
@@ -108,6 +108,7 @@ while True:
                 print(f"ERRORE: Cella ({x}, {y}) doveva essere sicura ma era una mina!")
                 agent.observe(x, y, value)
                 print("\nStato finale:")
+                agent.print_grid()
                 print("\nGAME OVER.")
                 game_over = True
                 break
@@ -123,6 +124,9 @@ while True:
         for x, y in mine_cells:
             agent.mark_mine(x, y)
 
+    agent.print_grid()
+    print()
+
     # Controlla se l'agente ha vinto
     if agent.check_victory_status(env):
         # Se ha vinto, flagga automaticamente tutte le mine rimanenti
@@ -131,11 +135,11 @@ while True:
                 if env.grid[i][j] == "M" and agent.knowledge[i][j] == "?":
                     agent.mark_mine(i, j)
         
-
+        agent.print_grid()
         print(f"\n HAI VINTO IN {move_count} MOSSE!")
         break
     
     move_count += 1
+
 end = time.time()
 print("\n Tempo trascorso:", end - start, "secondi")
-
