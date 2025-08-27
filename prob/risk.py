@@ -1,4 +1,14 @@
-# prob/risk.py — S1: frontier + exact only (NO sampler)
+# Questo modulo fornisce le funzioni principali per il reasoning probabilistico:
+# - compute_cell_probs: calcola la probabilità che ogni cella "?" sia una mina,
+#   combinando enumerazione esatta, prior globale e pressione locale.
+# - pick_min_risk: sceglie la cella "?" a rischio minimo, con tie-break informativo.
+#
+# Il reasoning si basa su:
+#   - Enumerazione esatta per componenti di frontiera piccole (tramite ExactEnumeration)
+#   - Prior globale per celle fuori dalla frontiera o in componenti troppo grandi
+#   - Pressione locale per affinare la stima sulle celle non coperte da enumerazione esatta
+#   - Ricalibrazione soft per rispettare il budget di mine rimaste
+
 DEBUG_RISK = False
 
 import random
@@ -11,12 +21,19 @@ from .exact import ExactEnumeration
 def compute_cell_probs(knowledge, mine_cells=None, total_mines=None,
                        max_vars_exact=22, max_solutions=200000, calibrate=True):
     """
-    Restituisce P(mina) per ogni cella "?".
+    Calcola la probabilità P(mina) per ogni cella "?" della griglia.
 
-    - Componenti di frontiera piccole (<= max_vars_exact): enumerazione esatta.
-    - Componenti grandi: prior p0 e poi raffinamento con "pressione locale".
+    - Per componenti di frontiera piccole (<= max_vars_exact): enumerazione esatta.
+    - Per componenti grandi: prior p0 e raffinamento con pressione locale.
     - Celle fuori frontiera: prior p0 OUTSIDE calcolato rispettando il budget di mine.
-    - Ricalibrazione soft SOLO sulle celle non-esatte.
+    - Ricalibrazione soft SOLO sulle celle non-esatte per rispettare il budget totale.
+
+    knowledge: griglia di stato (numeri, "?", "X")
+    mine_cells: celle già note come mine (set)
+    total_mines: numero totale di mine nella partita (se noto)
+    max_vars_exact: soglia per usare enumerazione esatta
+    max_solutions: limite di soluzioni per enumerazione esatta
+    calibrate: se True, ricalibra le probabilità per rispettare il budget di mine
     """
     n_row = len(knowledge)
     n_col = len(knowledge[0])
@@ -24,6 +41,7 @@ def compute_cell_probs(knowledge, mine_cells=None, total_mines=None,
 
     # --- helper locali ---
     def neighbors8(i, j):
+        # Generatore delle 8 celle adiacenti a (i,j)
         for di in (-1, 0, 1):
             for dj in (-1, 0, 1):
                 if di == 0 and dj == 0:
@@ -33,7 +51,10 @@ def compute_cell_probs(knowledge, mine_cells=None, total_mines=None,
                     yield (r, c)
 
     def local_pressure_prob(v):
-        """Media dei rapporti (mine-da-mettere)/(ignote) sui numeri adiacenti a v."""
+        """
+        Calcola la pressione locale su una cella v:
+        media dei rapporti (mine-da-mettere)/(ignote) sui numeri adiacenti a v.
+        """
         i, j = v
         ratios = []
         for r, c in neighbors8(i, j):
@@ -65,16 +86,13 @@ def compute_cell_probs(knowledge, mine_cells=None, total_mines=None,
         p0_fallback = mines_remaining / max(1.0, float(len(unknown)))
     else:
         mines_remaining = None
-        p0_fallback = 0.5
+        p0_fallback = 0.5  # fallback se non si sa nulla
 
-    # --- fronte: esatto dove possibile ---
-    from .frontier import frontier_components
-    from .exact import ExactEnumeration
-
+    # --- frontiera: enumerazione esatta dove possibile ---
     comps = frontier_components(knowledge, mine_cells)
     probs = {}
     frontier_vars = set()
-    exact_vars = set()   # <- celle con marginale "bloccata" da enumerazione esatta
+    exact_vars = set()   # celle con marginale "bloccata" da enumerazione esatta
 
     for vars_set, cons in comps:
         if not vars_set:
@@ -82,15 +100,18 @@ def compute_cell_probs(knowledge, mine_cells=None, total_mines=None,
         frontier_vars |= vars_set
 
         if len(vars_set) <= max_vars_exact:
+            # Usa enumerazione esatta per componenti piccole
             res = ExactEnumeration(vars_set, cons, max_solutions=max_solutions).run()
             if res and res.get("solutions", 0) > 0:
                 for v, p in res["marginals"].items():
                     probs[v] = float(p)
                     exact_vars.add(v)
             else:
+                # Se enumerazione fallisce, fallback su prior
                 for v in vars_set:
                     probs[v] = p0_fallback
         else:
+            # Componenti troppo grandi: fallback su prior
             for v in vars_set:
                 probs[v] = p0_fallback
 
@@ -100,7 +121,7 @@ def compute_cell_probs(knowledge, mine_cells=None, total_mines=None,
         if mines_remaining is None:
             p0_out = p0_fallback
         else:
-            # aspettativa di mine già "impegnata" sulla frontiera (esatto + fallback)
+            # Aspettativa di mine già "impegnata" sulla frontiera (esatto + fallback)
             E_frontier = sum(probs.get(v, p0_fallback) for v in frontier_vars)
             left_for_outside = max(0.0, mines_remaining - E_frontier)
             p0_out = left_for_outside / max(1.0, float(len(outside)))
@@ -109,7 +130,7 @@ def compute_cell_probs(knowledge, mine_cells=None, total_mines=None,
             probs[v] = p0_out
 
     # --- raffinamento locale (solo celle non-esatte) ---
-    ALPHA = 0.7
+    ALPHA = 0.7  # peso della pressione locale rispetto al prior
     for v in unknown:
         if v in exact_vars:
             continue
@@ -141,7 +162,10 @@ def compute_cell_probs(knowledge, mine_cells=None, total_mines=None,
 
 def pick_min_risk(knowledge, moves_made=None, mine_cells=None, **kwargs):
     """
-    Sceglie la '?' con P(mina) minima (tie-break per coordinate).
+    Sceglie la cella "?" con probabilità di mina minima.
+    - Esclude celle già rivelate (moves_made) e mine note (mine_cells).
+    - In caso di parità, usa un tie-break informativo (sceglie la cella con più ignote adiacenti).
+    - Se nessuna candidata, ritorna la prima "?" libera trovata (fallback).
     """
     n_row = len(knowledge)
     n_col = len(knowledge[0])
@@ -149,7 +173,6 @@ def pick_min_risk(knowledge, moves_made=None, mine_cells=None, **kwargs):
     mine_cells = set(mine_cells or [])
     forbidden = moves_made | mine_cells
 
-    
     # Costruisci i parametri per compute_cell_probs
     max_vars_exact = kwargs.get("max_vars_exact", 22)
     max_solutions  = kwargs.get("max_solutions", 200000)
@@ -164,29 +187,34 @@ def pick_min_risk(knowledge, moves_made=None, mine_cells=None, **kwargs):
         calibrate=True
     )
 
+    # Filtra le celle candidate (non vietate e ancora ignote)
     candidates = [(p, v) for v, p in probs.items()
               if v not in forbidden and knowledge[v[0]][v[1]] == "?"]
     if candidates:
-        # tie-break RANDOM tra i minimi (invece di ordinare per coordinate)
+        # tie-break: tra le celle a rischio minimo, scegli quella più "informativa"
         pmin = min(p for p, _ in candidates)
         bucket = [v for p, v in candidates if abs(p - pmin) <= EPS]
-        #choice = random.choice(bucket)
+        #choice = random.choice(bucket)  # tie-break casuale (disabilitato)
         choice = max(bucket, key=lambda v: _info_score(knowledge, v))
         if DEBUG_RISK:
             top = sorted(candidates, key=lambda x: x[0])[:5]
             print("[RISK] min=", round(pmin, 4), "bucket=", bucket, "top5=", [(v, round(p,3)) for p, v in top])
         return choice
 
-    # fallback: prima "?" libera
+    # fallback: prima "?" libera trovata (in ordine di scansione)
     for i in range(n_row):
         for j in range(n_col):
             if knowledge[i][j] == "?" and (i, j) not in forbidden:
                 return (i, j)
     return None
 
-# --- util locali ---
+# --- utilità locali ---
 
 def _info_score(knowledge, v):
+    """
+    Score informativo di una cella: quante "?" adiacenti ha.
+    Utile per il tie-break: scegliere la cella che, se rivelata, fornisce più informazione.
+    """
     n_row = len(knowledge)
     n_col = len(knowledge[0])
     i, j = v
@@ -200,6 +228,9 @@ def _info_score(knowledge, v):
     return s
 
 def neighbors8(i, j, n_row, n_col):
+    """
+    Generatore delle 8 celle adiacenti a (i,j), restando nei limiti della griglia.
+    """
     for di in (-1, 0, 1):
         for dj in (-1, 0, 1):
             if di == 0 and dj == 0: 
@@ -210,6 +241,10 @@ def neighbors8(i, j, n_row, n_col):
                 yield return_cell
 
 def local_pressure_prob(knowledge, mine_cells, v):
+    """
+    Calcola la pressione locale su una cella v rispetto alla knowledge e alle mine note.
+    Utile per test e debugging.
+    """
     n_row = len(knowledge)
     n_col = len(knowledge[0])
     i, j = v
