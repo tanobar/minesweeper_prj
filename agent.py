@@ -157,7 +157,7 @@ class Agent:
         Ritorna True se consistente, False se un qualunque dominio rimane vuoto.
         Al termine di essa, i domini potrebbero essere stati ridotti.
         """
-        pruned_count = [0]  # counter per controllare se gac3 aiuta sui domini, solo per debug
+        self.gac_count = 0 
         # Build adjacency: for each var, which constraints mention it?
         var2cons = {}
         #queue di coppie (variabile, vincolo); inseriamo tutte le possibili coppie inizialmente
@@ -187,8 +187,7 @@ class Agent:
                 if need < lo or need > hi:
                     self.Domains[Xi].discard(x)
                     removed = True
-                    pruned_count[0] += 1
-
+                    self.gac_count += 1
             return removed
 
         #finché la queue non è vuota
@@ -205,9 +204,7 @@ class Agent:
                     for Xk in Ck["neighbors"]:
                         if Xk != Xi:
                             Q.append((Xk, Ck))
-        #print(f"{pruned_count[0]} pruned domains by gac3")
-        #self.gac_count += 1
-        #print(self.gac_count, ' ', pruned_count[0])
+
         return True
 
 
@@ -231,20 +228,24 @@ class Agent:
         """if not variables or len(variables) > 15:  # Limite per performance
             return"""
         
+        gac = False
         # Usa GAC3 solo per le strategie backtracking_gac3 e backtracking_pb
         if self.strategy in ["backtracking_gac3", "backtracking_pb"]:
             gac = self.gac3()
         
-        # Per ogni variabile, testa se è sempre mina o sempre sicura
-        for var in variables:
-            # Se GAC3 è stato usato e è riuscito nel pruning
-            if gac and len(self.Domains[var]) == 1:
-                if next(iter(self.Domains[var])):
-                    self.mine_cells.add(var)
-                    self.knowledge[var[0]][var[1]] = "X"  # Marca anche nella knowledge per visualizzazione
-                else:
-                    self.safe_cells.add(var)
-            else:
+        
+        # Se GAC3 è stato usato e è riuscito nel pruning
+        if gac and self.gac_count > 0:
+            # Per ogni variabile, testa se è sempre mina o sempre sicura
+            for var in variables:
+                if len(self.Domains[var]) == 1:
+                    if next(iter(self.Domains[var])):
+                        self.mine_cells.add(var)
+                        self.knowledge[var[0]][var[1]] = "X"  # Marca anche nella knowledge per visualizzazione
+                    else:
+                        self.safe_cells.add(var)
+        else:
+            for var in variables:
                 if var in self.safe_cells or var in self.mine_cells:
                     continue
                     
