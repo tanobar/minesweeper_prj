@@ -1,9 +1,6 @@
 from minesweeper_env import MinesweeperEnv
 from agent import Agent
 import time
-from gui import MinesweeperGUI
-import tkinter as tk
-#from sound import play_melody
 
 
 def safe_first_move(env, agent):
