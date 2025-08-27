@@ -124,6 +124,10 @@ class Agent:
         self.knowledge[x][y] = "X"
         # Ottimizzazione: rimuovi dalle celle sconosciute se presente
         self.unknown_cells.discard((x, y))
+        # Marca come mossa fatta e decrementa il contatore delle mine rimanenti
+        if (x, y) not in self.moves_made:
+            self.moves_made.add((x, y))
+            self.to_flag -= 1
 
 
     def print_grid(self):
@@ -337,10 +341,6 @@ class Agent:
                 unflagged_mines.append((x, y))
         
         if unflagged_mines:
-            # Marca tutte le mine come mosse fatte e decrementa il contatore
-            for x, y in unflagged_mines:
-                self.moves_made.add((x, y))
-                self.to_flag -= 1
             return ("flag_all", unflagged_mines)
         
         # Seconda priorità: celle sicure (rivela tutte quelle disponibili)
@@ -393,10 +393,6 @@ class Agent:
                 unflagged_mines.append((x, y))
         
         if unflagged_mines:
-            # Marca tutte le mine come mosse fatte e decrementa il contatore
-            for x, y in unflagged_mines:
-                self.moves_made.add((x, y))
-                self.to_flag -= 1
             return ("flag_all", unflagged_mines)
         
         # Seconda priorità: celle sicure (rivela tutte quelle disponibili)
