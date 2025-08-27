@@ -33,6 +33,7 @@ class Agent:
             self.constraints = []  # Lista di vincoli: [{"cell": tuple, " "neighbors": set(), "count": int}, ...]
 
         self.Domains = {(x, y): {0, 1} for x in range(n_row) for y in range(n_col)}
+        self.gac_count = 0
 
     def observe(self, x, y, value):
         """
@@ -152,58 +153,51 @@ class Agent:
 
     def gac3(self):
         """
-        Generalized-arc-consistency-3, utile per pruning di domini
-
-        Sfrutta i campi Domains e constraints dell'agente
-
-        domains: dict[var] -> sottoinsieme di {0,1}
-        constraints: lista di dizionari composti da cella, vicini non assegnati e vincolo 
+        Generalized-arc-consistency-3, utile per pruning di domini.
         Ritorna True se consistente, False se un qualunque dominio rimane vuoto.
+        Al termine di essa, i domini potrebbero essere stati ridotti.
         """
         pruned_count = [0]  # counter per controllare se gac3 aiuta sui domini, solo per debug
-        domains = copy.deepcopy(self.Domains)
-        constraints = copy.deepcopy(self.constraints)
         # Build adjacency: for each var, which constraints mention it?
         var2cons = {}
+        #queue di coppie (variabile, vincolo); inseriamo tutte le possibili coppie inizialmente
+        #usiamo deque per performance e semplicità
         Q = deque()
-        for C in constraints:
+        for C in self.constraints:
             for v in C["neighbors"]:
                 var2cons.setdefault(v, []).append(C)
                 Q.append((v, C))
 
        
         def revise(Xi, C):
+            """ 
+            funzione ausiliaria equivalente a Remove-Inconsistent-Values sulle slide
+            Prende in input una coppia (X_i, C), dove X_i fa parte del vincolo C.
+            Restituisce True se (e solo se) sono stati rimossi valori dal dominio di X_i
+            """
             removed = False
             others = C["neighbors"] - {Xi}
 
-            for x in tuple(domains[Xi]):  #iteriamo su una copia immutabile, poiché il set cambierà
+            lo = sum(min(self.Domains[v]) for v in others) #lower bound di need
+            hi = sum(max(self.Domains[v]) for v in others) #upper bound di need
+            for x in tuple(self.Domains[Xi]):  #iteriamo su una copia immutabile, poiché il set cambierà
                 need = C["count"] - x
-                # quick bound check
-                lo = sum(min(domains[v]) for v in others)
-                hi = sum(max(domains[v]) for v in others)
+                #lower/upper bound check per scartare x precocemente
+                #x sta in [lo,hi] se e solo se ammette un assegnamento valido delle others
                 if need < lo or need > hi:
-                    domains[Xi].discard(x)
+                    self.Domains[Xi].discard(x)
                     removed = True
                     pruned_count[0] += 1
-                    continue
-                # si cerca una qualunque tupla sui domini degli "others" la cui somma è "need"
-                dom_lists = [tuple(domains[v]) for v in others]
-                supported = False
-                for choices in product(*dom_lists):
-                    if sum(choices) == need:
-                        supported = True
-                        break
-                if not supported:
-                    domains[Xi].discard(x)
-                    removed = True
-                    pruned_count[0] += 1
+
             return removed
 
+        #finché la queue non è vuota
         while Q:
             Xi, C = Q.popleft()
             if revise(Xi, C):
-                if not domains[Xi]: #se il dominio di X_i è ora vuoto
-                    return False    #gac3 fallisce
+                if not self.Domains[Xi]: #se il dominio di X_i è ora vuoto
+                    return False    #gac3 fallisce e il CSP con gli assegnamenti attuali
+                                    #non è risolvibile (ASSURDO)
                 # riaggiungi (Xk, Ck) per vincoli che interessano Xi (tranne C stesso)
                 for Ck in var2cons.get(Xi, []):
                     if Ck is C: 
@@ -211,8 +205,9 @@ class Agent:
                     for Xk in Ck["neighbors"]:
                         if Xk != Xi:
                             Q.append((Xk, Ck))
-        self.Domains = domains
         #print(f"{pruned_count[0]} pruned domains by gac3")
+        #self.gac_count += 1
+        #print(self.gac_count, ' ', pruned_count[0])
         return True
 
 
@@ -238,12 +233,12 @@ class Agent:
         
         # Usa GAC3 solo per le strategie backtracking_gac3 e backtracking_pb
         if self.strategy in ["backtracking_gac3", "backtracking_pb"]:
-            self.gac3()
+            gac = self.gac3()
         
         # Per ogni variabile, testa se è sempre mina o sempre sicura
         for var in variables:
             # Se GAC3 è stato usato e è riuscito nel pruning
-            if self.strategy in ["backtracking_gac3", "backtracking_pb"] and len(self.Domains[var]) == 1:
+            if gac and len(self.Domains[var]) == 1:
                 if next(iter(self.Domains[var])):
                     self.mine_cells.add(var)
                     self.knowledge[var[0]][var[1]] = "X"  # Marca anche nella knowledge per visualizzazione
