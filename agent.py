@@ -1,9 +1,7 @@
 import random
 import support
-import copy
 from prob.risk import pick_min_risk
 from collections import deque
-from itertools import product
 
 
 class Agent:
@@ -12,8 +10,9 @@ class Agent:
         Agente modulare per minesweeper.
         
         Args:
-            n_row, n_col: dimensioni della griglia (n_row x n_col)
-            strategy: strategia principale ("backtracking", "backtracking_advanced", "backtracking_gac3", "backtracking_pb", "random")
+            n_row: numero di righe della griglia
+            n_col: numero di colonne della griglia
+            strategy: strategia principale ("backtracking", "backtracking_advanced", "backtracking_gac3", "random")
             total_mines: numero totale di mine nel gioco
         """
         self.n_row = n_row
@@ -28,8 +27,11 @@ class Agent:
         # Configurazione strategia
         self.strategy = strategy
         
+        # Ottimizzazione: mantieni set di celle sconosciute
+        self.unknown_cells = {(i, j) for i in range(n_row) for j in range(n_col)}
+        
         # Attributi specifici per CSP/backtracking
-        if strategy in ["backtracking", "backtracking_advanced", "backtracking_gac3", "backtracking_pb"]:
+        if strategy in ["backtracking", "backtracking_advanced", "backtracking_gac3"]:
             self.constraints = []  # Lista di vincoli: [{"cell": tuple, " "neighbors": set(), "count": int}, ...]
 
         self.Domains = {(x, y): {0, 1} for x in range(n_row) for y in range(n_col)}
@@ -47,8 +49,11 @@ class Agent:
         self.knowledge[x][y] = value
         self.moves_made.add((x, y))
         
+        # Ottimizzazione: rimuovi dalle celle sconosciute
+        self.unknown_cells.discard((x, y))
+        
         # Logica specifica per strategia
-        if self.strategy in ["backtracking", "backtracking_advanced", "backtracking_gac3", "backtracking_pb"]:
+        if self.strategy in ["backtracking", "backtracking_advanced", "backtracking_gac3"]:
             self._observe_backtracking(x, y, value)
         elif self.strategy == "random":
             self._observe_random(x, y, value)
@@ -83,7 +88,7 @@ class Agent:
         """
         Crea un vincolo per una cella numerica (solo per strategia backtracking).
         """
-        if self.strategy not in ["backtracking", "backtracking_advanced", "backtracking_gac3", "backtracking_pb"]:
+        if self.strategy not in ["backtracking", "backtracking_advanced", "backtracking_gac3"]:
             return
             
         adjacent_unknown = set()
@@ -117,6 +122,8 @@ class Agent:
         """
         self.mine_cells.add((x, y))
         self.knowledge[x][y] = "X"
+        # Ottimizzazione: rimuovi dalle celle sconosciute se presente
+        self.unknown_cells.discard((x, y))
 
 
     def print_grid(self):
@@ -141,7 +148,7 @@ class Agent:
         Returns:
             list: lista di tuple (r, c) delle celle sconosciute
         """
-        if self.strategy not in ["backtracking", "backtracking_advanced", "backtracking_gac3", "backtracking_pb"]:
+        if self.strategy not in ["backtracking", "backtracking_advanced", "backtracking_gac3"]:
             return []
             
         variables = set()
@@ -212,7 +219,7 @@ class Agent:
         """
         Usa backtracking per inferire celle sicure e mine.
         """
-        if self.strategy not in ["backtracking", "backtracking_advanced", "backtracking_gac3", "backtracking_pb"]:
+        if self.strategy not in ["backtracking", "backtracking_advanced", "backtracking_gac3"]:
             return
             
         # Ricostruisci vincoli aggiornati
@@ -229,8 +236,8 @@ class Agent:
             return"""
         
         gac = False
-        # Usa GAC3 solo per le strategie backtracking_gac3 e backtracking_pb
-        if self.strategy in ["backtracking_gac3", "backtracking_pb"]:
+        # Usa GAC3 solo per la strategia backtracking_gac3
+        if self.strategy == "backtracking_gac3":
             gac = self.gac3()
         
         
@@ -242,8 +249,10 @@ class Agent:
                     if next(iter(self.Domains[var])):
                         self.mine_cells.add(var)
                         self.knowledge[var[0]][var[1]] = "X"  # Marca anche nella knowledge per visualizzazione
+                        self.unknown_cells.discard(var)  # Rimuovi dalle celle sconosciute
                     else:
                         self.safe_cells.add(var)
+                        self.unknown_cells.discard(var)  # Rimuovi dalle celle sconosciute
         else:
             for var in variables:
                 if var in self.safe_cells or var in self.mine_cells:
@@ -256,9 +265,11 @@ class Agent:
                 
                 if can_be_safe and not can_be_mine:
                     self.safe_cells.add(var)
+                    self.unknown_cells.discard(var)  # Rimuovi dalle celle sconosciute
                 elif can_be_mine and not can_be_safe:
                     self.mine_cells.add(var)
                     self.knowledge[var[0]][var[1]] = "X"
+                    self.unknown_cells.discard(var)  # Rimuovi dalle celle sconosciute
 
 
     def backtrack(self, assignment, unassigned):
@@ -275,16 +286,16 @@ class Agent:
         if not unassigned:
             return support.is_consistent(self, assignment)
         
-        # Selezione variabile (MRV + Degree se strategia avanzata, gac3 o pb)
-        if self.strategy in ["backtracking_advanced", "backtracking_gac3", "backtracking_pb"]:
+        # Selezione variabile (MRV + Degree se strategia avanzata o gac3)
+        if self.strategy in ["backtracking_advanced", "backtracking_gac3"]:
             var = support.select_unassigned_variable(self, unassigned, assignment)
         else:
             var = unassigned[0]  # Prima variabile disponibile
         
         unassigned.remove(var)
         
-        # Ordinamento valori (LCV se strategia avanzata, gac3 o pb)
-        if self.strategy in ["backtracking_advanced", "backtracking_gac3", "backtracking_pb"]:
+        # Ordinamento valori (LCV se strategia avanzata o gac3)
+        if self.strategy in ["backtracking_advanced", "backtracking_gac3"]:
             values = [False, True]  # Per ora ordine semplice
         else:
             values = [False, True]
@@ -304,7 +315,7 @@ class Agent:
         """
         Sceglie la prossima azione in base alla strategia configurata.
         """
-        if self.strategy in ["backtracking", "backtracking_advanced", "backtracking_gac3", "backtracking_pb"]:
+        if self.strategy in ["backtracking", "backtracking_advanced", "backtracking_gac3"]:
             return self._choose_action_backtracking()
         elif self.strategy == "random":
             return self._choose_action_random()
@@ -344,17 +355,13 @@ class Agent:
         
         # Se non ci sono celle sicure, fallback basato sulla strategia
         unknown = [
-            (i, j)
-            for i in range(self.n_row)
-            for j in range(self.n_col)
-            if self.knowledge[i][j] == "?"
-               and (i, j) not in self.mine_cells
-               and (i, j) not in self.moves_made
+            (i, j) for (i, j) in self.unknown_cells
+            if (i, j) not in self.mine_cells and (i, j) not in self.moves_made
         ]
 
         if unknown:
-            # Solo la strategia backtracking_pb usa PB come fallback
-            if self.strategy == "backtracking_pb":
+            # Tutte le strategie di backtracking usano PB come fallback
+            if self.strategy in ["backtracking", "backtracking_advanced", "backtracking_gac3"]:
                 pick = pick_min_risk(
                     self.knowledge,
                     moves_made=self.moves_made,
@@ -367,7 +374,7 @@ class Agent:
                     x, y = pick
                     return ("reveal", x, y)
             
-            # Fallback per tutte le altre strategie: scelta casuale
+            # Fallback per la strategia random: scelta casuale
             x, y = random.choice(unknown)
             return ("reveal", x, y)
         
@@ -403,12 +410,8 @@ class Agent:
 
         # Altrimenti esplora guidato dalla probabilità (fallback)
         unknown = [
-            (i, j)
-            for i in range(self.n_row)
-            for j in range(self.n_col)
-            if self.knowledge[i][j] == "?"
-               and (i, j) not in self.mine_cells
-               and (i, j) not in self.moves_made
+            (i, j) for (i, j) in self.unknown_cells
+            if (i, j) not in self.mine_cells and (i, j) not in self.moves_made
         ]
 
         if unknown:
