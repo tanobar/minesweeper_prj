@@ -1,5 +1,5 @@
 # CSP-based minesweeper agent
-## Authors
+## Authors: Roomba Riders
 * Alice Nicoletta
 * Gaetano Barresi
 * Leonardo Cozzolino
