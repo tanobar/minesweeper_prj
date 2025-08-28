@@ -2,3 +2,4 @@ __pycache__
 aif_venv
 assessment_analysis.ipynb
 test.ipynb
+*.json
