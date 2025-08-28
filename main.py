@@ -54,7 +54,7 @@ def choose_agent_configuration():
             print("Scelta non valida. Inserisci un numero da 1 a 4.")
 
 
-n_row, n_col, m = 16, 32, 99  # Dimensione della griglia (r x c) e numero di mine m
+n_row, n_col, m = 16, 30, 99  # Dimensione della griglia (r x c) e numero di mine m
 
 # Configura l'agente
 agent = choose_agent_configuration()
