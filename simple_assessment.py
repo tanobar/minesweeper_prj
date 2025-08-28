@@ -169,17 +169,30 @@ def run_assessment_mode(mode="mode1"):
             if game_result['won']:
                 wins += 1
         
-        # Calcola metriche aggregate
+        # Calcola metriche aggregate con deviazione standard
         win_rate = wins / n_games
-        avg_cells_revealed = statistics.mean([g['cells_revealed'] for g in games_data])
-        avg_move_time = statistics.mean([g['avg_move_time'] for g in games_data])
-        avg_game_time = statistics.mean([g['game_time'] for g in games_data])
+        
+        cells_revealed_data = [g['cells_revealed'] for g in games_data]
+        move_time_data = [g['avg_move_time'] for g in games_data]
+        game_time_data = [g['game_time'] for g in games_data]
+        
+        avg_cells_revealed = statistics.mean(cells_revealed_data)
+        std_cells_revealed = statistics.stdev(cells_revealed_data) if len(cells_revealed_data) > 1 else 0
+        
+        avg_move_time = statistics.mean(move_time_data)
+        std_move_time = statistics.stdev(move_time_data) if len(move_time_data) > 1 else 0
+        
+        avg_game_time = statistics.mean(game_time_data)
+        std_game_time = statistics.stdev(game_time_data) if len(game_time_data) > 1 else 0
         
         results[strategy] = {
             'win_rate': win_rate,
             'avg_cells_revealed': avg_cells_revealed,
+            'std_cells_revealed': std_cells_revealed,
             'avg_move_time': avg_move_time,
+            'std_move_time': std_move_time,
             'avg_game_time': avg_game_time,
+            'std_game_time': std_game_time,
             'total_games': n_games,
             'wins': wins
         }
@@ -207,9 +220,9 @@ def print_results(results, n_row, n_col, n_mines, n_games):
     for strategy, metrics in sorted_strategies:
         print(f"STRATEGIA: {strategy}")
         print(f"  Win Rate: {metrics['wins']}/{metrics['total_games']} ({metrics['win_rate']*100:.1f}%)")
-        print(f"  Celle rivelate (media): {metrics['avg_cells_revealed']:.1f}")
-        print(f"  Tempo per mossa (media): {metrics['avg_move_time']*1000:.2f}ms")
-        print(f"  Tempo per partita (media): {metrics['avg_game_time']:.2f}s")
+        print(f"  Celle rivelate: {metrics['avg_cells_revealed']:.1f} ± {metrics['std_cells_revealed']:.1f}")
+        print(f"  Tempo per mossa: {metrics['avg_move_time']*1000:.2f} ± {metrics['std_move_time']*1000:.2f} ms")
+        print(f"  Tempo per partita: {metrics['avg_game_time']:.2f} ± {metrics['std_game_time']:.2f} s")
         print()
 
 
