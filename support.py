@@ -19,7 +19,10 @@ def select_unassigned_variable(agent, unassigned, assignment):
     candidates = []
     
     # Prima fase: trova il minimo MRV
-    for var in unassigned:
+    # Ottimizzazione: filtra solo le variabili che sono ancora unknown
+    valid_unassigned = [var for var in unassigned if var in agent.unknown_cells]
+    
+    for var in valid_unassigned:
         legal_values = 0
         for value in agent.Domains[var]:
             test_assignment = assignment.copy()
@@ -63,7 +66,7 @@ def calculate_degree(agent, var, unassigned, assignment):
         int: degree della variabile
     """
     degree = 0
-    unassigned_set = set(unassigned)
+    unassigned_set = agent.unknown_cells & set(unassigned)
     x, y = var
     
     # Ottimizzazione: controlla solo i constraints delle celle adiacenti a var
@@ -106,7 +109,7 @@ def is_consistent_partial(agent, assignment):
                 assigned_in_constraint += 1
                 if assignment[cell]:
                     mines_assigned += 1
-            elif agent.knowledge[cell[0]][cell[1]] == "?":
+            elif cell in agent.unknown_cells:
                 unassigned_in_constraint += 1
         
         remaining_mines = constraint["count"] - mines_assigned

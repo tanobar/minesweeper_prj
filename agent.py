@@ -158,9 +158,8 @@ class Agent:
             
         variables = set()
         for constraint in self.constraints:
-            for cell in constraint["neighbors"]:
-                if self.knowledge[cell[0]][cell[1]] == "?":
-                    variables.add(cell)
+            constraint_unknowns = constraint["neighbors"] & self.unknown_cells
+            variables.update(constraint_unknowns)
         return list(variables)
 
     def gac3(self):
@@ -235,10 +234,10 @@ class Agent:
                     self.add_constraint(i, j, self.knowledge[i][j])
         
         variables = self.get_variables()
-        if not variables:
-            return
-        """if not variables or len(variables) > 15:  # Limite per performance
+        """if not variables:
             return"""
+        if not variables or (self.strategy == "backtracking" and len(variables) > 35):  # Limite per performance
+            return
         
         gac = False
         # Usa GAC3 solo per la strategia backtracking_gac3
