@@ -253,10 +253,8 @@ class Agent:
                     if next(iter(self.Domains[var])):
                         self.mine_cells.add(var)
                         self.knowledge[var[0]][var[1]] = "X"  # Marca anche nella knowledge per visualizzazione
-                        self.unknown_cells.discard(var)  # Rimuovi dalle celle sconosciute
                     else:
                         self.safe_cells.add(var)
-                        self.unknown_cells.discard(var)  # Rimuovi dalle celle sconosciute
         else:
             for var in variables:
                 if var in self.safe_cells or var in self.mine_cells:
@@ -269,11 +267,9 @@ class Agent:
                 
                 if can_be_safe and not can_be_mine:
                     self.safe_cells.add(var)
-                    self.unknown_cells.discard(var)  # Rimuovi dalle celle sconosciute
                 elif can_be_mine and not can_be_safe:
                     self.mine_cells.add(var)
                     self.knowledge[var[0]][var[1]] = "X"
-                    self.unknown_cells.discard(var)  # Rimuovi dalle celle sconosciute
 
 
     def backtrack(self, assignment, unassigned):
@@ -354,12 +350,7 @@ class Agent:
             return ("reveal_all_safe", available_safe)
         
         # Se non ci sono celle sicure, fallback basato sulla strategia
-        unknown = [
-            (i, j) for (i, j) in self.unknown_cells
-            if (i, j) not in self.mine_cells and (i, j) not in self.moves_made
-        ]
-
-        if unknown:
+        if self.unknown_cells:
             # Tutte le strategie di backtracking usano PB come fallback
             if self.strategy in ["backtracking", "backtracking_advanced", "backtracking_gac3"]:
                 pick = pick_min_risk(
@@ -375,7 +366,7 @@ class Agent:
                     return ("reveal", x, y)
             
             # Fallback per la strategia random: scelta casuale
-            x, y = random.choice(unknown)
+            x, y = self.unknown_cells.pop()
             return ("reveal", x, y)
         
         else:
@@ -405,13 +396,8 @@ class Agent:
             return ("reveal_all_safe", available_safe)
 
         # Altrimenti esplora guidato dalla probabilità (fallback)
-        unknown = [
-            (i, j) for (i, j) in self.unknown_cells
-            if (i, j) not in self.mine_cells and (i, j) not in self.moves_made
-        ]
-
-        if unknown:
-            x, y = random.choice(unknown)
+        if self.unknown_cells:
+            x, y = self.unknown_cells.pop()
             return ("reveal", x, y)
         else:
             return None
