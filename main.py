@@ -3,7 +3,6 @@ from agent import Agent
 import time
 from gui import MinesweeperGUI
 import tkinter as tk
-#from sound import play_melody
 
 
 def safe_first_move(env, agent):
@@ -70,10 +69,6 @@ print(f"\nUsando strategia: {agent.strategy}")
 # Convenzione minesweeper: la prima mossa è sempre sicura
 safe_first_move(env, agent)
 
-"""#suoni
-MINE_SOUND = [(523, 0.2), (440, 0.2), (330, 0.4)]
-WIN_SOUND  = [(659, 0.2), (784, 0.2), (880, 0.4)]"""
-
 move_count = 0
 # ciclo di gioco
 root = tk.Tk()
@@ -102,7 +97,6 @@ while True:
             agent.observe(x, y, value)
             print("\nStato finale:")
             gui.draw_grid(agent.knowledge,  agent.to_flag, 'n')
-            #play_melody(MINE_SOUND)
             print("\nGAME OVER.")
             break
 
@@ -145,7 +139,6 @@ while True:
                     agent.mark_mine(i, j)
         
         gui.draw_grid(agent.knowledge, agent.to_flag, 'y')
-        #play_melody(WIN_SOUND)
         print(f"\n HAI VINTO IN {move_count} MOSSE!")
         break
     
