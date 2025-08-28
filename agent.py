@@ -50,7 +50,7 @@ class Agent:
         self.knowledge[x][y] = value
         self.moves_made.add((x, y))
         
-        # Ottimizzazione: rimuovi dalle celle sconosciute
+        # rimuovi dalle celle sconosciute
         self.unknown_cells.discard((x, y))
         
         # Logica specifica per strategia
@@ -123,7 +123,7 @@ class Agent:
         """
         self.mine_cells.add((x, y))
         self.knowledge[x][y] = "X"
-        # Ottimizzazione: rimuovi dalle celle sconosciute se presente
+        # rimuovi dalle celle sconosciute se presente
         self.unknown_cells.discard((x, y))
         # Marca come mossa fatta e decrementa il contatore delle mine rimanenti
         if (x, y) not in self.moves_made:
@@ -234,8 +234,6 @@ class Agent:
                     self.add_constraint(i, j, self.knowledge[i][j])
         
         variables = self.get_variables()
-        """if not variables:
-            return"""
         if not variables or (self.strategy == "backtracking" and len(variables) > 35):  # Limite per performance
             return
         
@@ -331,7 +329,7 @@ class Agent:
 
     def _choose_action_backtracking(self):
         """
-        Sceglie la prossima azione usando inferenza CSP e fallback a scelta casuale.
+        Sceglie la prossima azione usando inferenza CSP e fallback PR.
         """
         # Prima prova l'inferenza CSP usando metodi di istanza
         self.infer_safe_and_mines()
