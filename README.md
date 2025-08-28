@@ -1,5 +1,5 @@
 # CSP-based minesweeper agent
-Authors
+## Authors
 * Alice Nicoletta
 * Gaetano Barresi
 * Leonardo Cozzolino
