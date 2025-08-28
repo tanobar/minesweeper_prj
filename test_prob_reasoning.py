@@ -27,10 +27,7 @@ from prob.exact import ExactEnumeration                  # Per enumerazione esat
 EPS = 1e-12  # Tolleranza numerica per confronti tra float
 
 
-# ---------------------------
 # Helper
-# ---------------------------
-
 def show_probs(nr, nc, probs):
     # Crea una griglia testuale delle probabilità, formattando ogni cella con 3 decimali
     grid = [["." for _ in range(nc)] for _ in range(nr)]
@@ -104,11 +101,8 @@ def dump_exact_marginals(knowledge, mine_cells=set(), max_vars_exact=22):
         print("Nessuna componente piccola per dump esatto.")
 
 
-# ===================== TEST: FEATURE-BY-FEATURE ========================
 
-# ----------------------------------------------------------------------
 # TEST 1: Prior uniforme in assenza di frontiera
-# ----------------------------------------------------------------------
 def test_no_frontier_prior_uniform():
     """
     Caso base: nessuna cella numerica visibile, quindi nessuna informazione locale.
@@ -134,9 +128,7 @@ def test_no_frontier_prior_uniform():
     assert pick is not None and K[pick[0]][pick[1]] == "?"
 
 
-# ----------------------------------------------------------------------
 # TEST 2: Pressione locale + blending (senza calibrazione)
-# ----------------------------------------------------------------------
 def test_local_pressure_blending_no_calibration():
     """
     Si testa il blending tra prior globale e pressione locale (senza calibrazione).
@@ -183,9 +175,7 @@ def test_local_pressure_blending_no_calibration():
         assert isclose(P[v], exp, rel_tol=0, abs_tol=5e-12), (v, P[v], exp)
 
 
-# ----------------------------------------------------------------------
 # TEST 3: Frontiera semplice e scelta min-risk
-# ----------------------------------------------------------------------
 def test_frontier_min_risk_pick():
     """
     Si testa che, in presenza di una piccola frontiera con due numeri agli angoli,
@@ -209,9 +199,7 @@ def test_frontier_min_risk_pick():
     assert pick == (1,1)
 
 
-# ----------------------------------------------------------------------
 # TEST 4: Rispetto di mine note e mosse già fatte
-# ----------------------------------------------------------------------
 def test_forbidden_and_known_mines_respected():
     """
     Si verifica che le celle già rivelate (moves_made) e quelle marcate come mine note
@@ -238,9 +226,7 @@ def test_forbidden_and_known_mines_respected():
     assert pick is not None and pick != (1,1) and pick != (0,1)
 
 
-# ----------------------------------------------------------------------
 # TEST 5: Ricalibrazione soft (budget alignment)
-# ----------------------------------------------------------------------
 def test_soft_calibration_budget_alignment():
     """
     Si testa che la ricalibrazione soft delle probabilità (calibration) porti la somma
@@ -265,9 +251,7 @@ def test_soft_calibration_budget_alignment():
     assert abs(S - total_mines) <= 0.2  # 10% di 2
 
 
-# ----------------------------------------------------------------------
 # TEST 6: Accordo con enumerazione esatta su micro-frontiera
-# ----------------------------------------------------------------------
 def test_exact_enumeration_agreement_on_small_component():
     """
     Si verifica che, su una micro-frontiera (pochi '?' e vincoli), il calcolo
@@ -295,9 +279,7 @@ def test_exact_enumeration_agreement_on_small_component():
         assert abs(P[v] - p_star) <= 1e-9, (v, P[v], p_star)
 
 
-# ----------------------------------------------------------------------
 # TEST 7: Monotonia delle probabilità con nuova informazione
-# ----------------------------------------------------------------------
 def test_monotonicity_with_new_information():
     """
     Si verifica che, aggiungendo nuova informazione corretta (es. rivelando una safe
@@ -333,9 +315,7 @@ def test_monotonicity_with_new_information():
     assert P3[v] <= p_before + EPS
 
 
-# ----------------------------------------------------------------------
 # TEST 8: Prior uniforme sulle vere celle "outside"
-# ----------------------------------------------------------------------
 def test_outside_prior_uniform_true_outside_cells():
     """
     Si verifica che le celle davvero fuori dalla frontiera (cioè non adiacenti a
@@ -363,9 +343,7 @@ def test_outside_prior_uniform_true_outside_cells():
     assert max(vals) - min(vals) <= 1e-12
 
 
-# ----------------------------------------------------------------------
 # TEST 9: Scelta forzata probabilistica in caso di parità
-# ----------------------------------------------------------------------
 def test_forced_probabilistic_choice():
     """
     Si verifica che, in assenza di deduzioni certe, le probabilità siano uguali
@@ -390,9 +368,7 @@ def test_forced_probabilistic_choice():
     assert pick in [(0,0), (1,1)]
 
 
-# ----------------------------------------------------------------------
 # TEST 10: Simmetria 3x3 e tie-break informativo
-# ----------------------------------------------------------------------
 def test_symmetry_3x3_and_informative_tiebreak():
     """
     Si verifica che, in una situazione simmetrica, tutte le celle interne abbiano
@@ -423,9 +399,7 @@ def test_symmetry_3x3_and_informative_tiebreak():
         assert center > count_adj_unknowns(K, v)
 
 
-# ----------------------------------------------------------------------
 # TEST 11: Simmetria 4x4, tutte le interne uguali
-# ----------------------------------------------------------------------
 def test_symmetry_4x4_internals_equal():
     """
     Si verifica che, in una griglia 4x4 simmetrica con 4 mine, tutte le celle
@@ -458,9 +432,7 @@ def test_symmetry_4x4_internals_equal():
     assert pick in internals
 
 
-# ----------------------------------------------------------------------
 # TEST 12: Fallback su prior simmetrico in caso di inconsistenza
-# ----------------------------------------------------------------------
 def test_inconsistency_fallback_prior():
     """
     Si verifica che, in presenza di vincoli incompatibili (es. due numeri che
@@ -485,9 +457,7 @@ def test_inconsistency_fallback_prior():
         assert 0.0 <= p <= 1.0
 
 
-# ---------------------------
-# Main manuale
-# ---------------------------
+# Main
 if __name__ == "__main__":
     # Lista di tutti i test da eseguire
     tests = [

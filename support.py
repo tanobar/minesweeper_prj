@@ -1,5 +1,6 @@
 """
-Funzioni di supporto per CSP.
+Modulo support.py - Funzioni di supporto per CSP nel minesweeper.
+Contiene funzioni di utilità per euristiche, vincoli e controlli di consistenza.
 """
 
 def select_unassigned_variable(agent, unassigned, assignment):
