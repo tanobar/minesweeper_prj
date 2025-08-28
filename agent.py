@@ -33,6 +33,7 @@ class Agent:
         # Attributi specifici per CSP/backtracking
         if strategy in ["backtracking", "backtracking_advanced", "backtracking_gac3"]:
             self.constraints = []  # Lista di vincoli: [{"cell": tuple, " "neighbors": set(), "count": int}, ...]
+            self.var2constraints = {} #{var: [C1, C2, ...], ...}
 
         self.Domains = {(x, y): {0, 1} for x in range(n_row) for y in range(n_col)}
         self.gac_count = 0
@@ -316,6 +317,12 @@ class Agent:
         Sceglie la prossima azione in base alla strategia configurata.
         """
         if self.strategy in ["backtracking", "backtracking_advanced", "backtracking_gac3"]:
+            #se sono state trovate celle nulle al turno precedente, si rivelano immediatamente i loro vicini
+            if self.safe_cells:
+                self.safe_cells.difference_update(self.moves_made)
+                available_safe = list(self.safe_cells)
+                self.safe_cells.clear()
+                return ("reveal_all_safe", available_safe)
             return self._choose_action_backtracking()
         elif self.strategy == "random":
             return self._choose_action_random()

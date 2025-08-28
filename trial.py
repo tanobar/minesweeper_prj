@@ -52,7 +52,7 @@ def choose_agent_configuration():
             print("Scelta non valida. Inserisci un numero da 1 a 4.")
 
 
-n_row, n_col, m = 8, 8, 10  # Dimensione della griglia (r x c) e numero di mine m
+n_row, n_col, m = 32, 32, 200  # Dimensione della griglia (r x c) e numero di mine m
 
 # Configura l'agente
 agent = choose_agent_configuration()
@@ -92,7 +92,7 @@ while True:
             print(f"BOOM! Cella ({x}, {y}) era una mina!")
             agent.observe(x, y, value)
             print("\nStato finale:")
-            agent.print_grid()
+            #agent.print_grid()
             print("\nGAME OVER.")
             break
 
@@ -108,7 +108,7 @@ while True:
                 print(f"ERRORE: Cella ({x}, {y}) doveva essere sicura ma era una mina!")
                 agent.observe(x, y, value)
                 print("\nStato finale:")
-                agent.print_grid()
+                #agent.print_grid()
                 print("\nGAME OVER.")
                 game_over = True
                 break
@@ -124,8 +124,8 @@ while True:
         for x, y in mine_cells:
             agent.mark_mine(x, y)
 
-    agent.print_grid()
-    print()
+    #agent.print_grid()
+    #print()
 
     # Controlla se l'agente ha vinto
     if agent.check_victory_status(env):
